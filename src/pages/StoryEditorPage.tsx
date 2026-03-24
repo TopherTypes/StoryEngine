@@ -1,4 +1,6 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { Play } from 'lucide-react'
+import { Button } from '../components/common/Button'
 import { useUIStore } from '../stores/uiStore'
 import { useStoryStore } from '../stores/storyStore'
 import { LeftNavigation } from '../components/editor/LeftNavigation'
@@ -8,6 +10,7 @@ import { TimelineTab } from '../components/editor/tabs/TimelineTab'
 import { AssetManagerTab } from '../components/editor/tabs/AssetManagerTab'
 import { EndingTab } from '../components/editor/tabs/EndingTab'
 import { ValidateTab } from '../components/editor/tabs/ValidateTab'
+import { PreviewModal } from '../components/preview/PreviewModal'
 
 interface StoryEditorPageProps {
   storyId: string
@@ -24,6 +27,7 @@ const TABS = {
 }
 
 export function StoryEditorPage({ storyId, onClose }: StoryEditorPageProps) {
+  const [previewOpen, setPreviewOpen] = useState(false)
   const { activeTab } = useUIStore()
   const { loadStory, getCurrentStory } = useStoryStore()
 
@@ -53,9 +57,15 @@ export function StoryEditorPage({ storyId, onClose }: StoryEditorPageProps) {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <div className="border-b border-gray-200 bg-white shadow-sm">
-          <div className="px-6 py-4">
-            <h1 className="text-2xl font-bold text-gray-900">{story.title}</h1>
-            <p className="text-sm text-gray-600 mt-1">{story.description}</p>
+          <div className="px-6 py-4 flex items-start justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">{story.title}</h1>
+              <p className="text-sm text-gray-600 mt-1">{story.description}</p>
+            </div>
+            <Button onClick={() => setPreviewOpen(true)} className="gap-2 whitespace-nowrap">
+              <Play className="w-4 h-4" />
+              Preview
+            </Button>
           </div>
         </div>
 
@@ -66,6 +76,9 @@ export function StoryEditorPage({ storyId, onClose }: StoryEditorPageProps) {
           </div>
         </div>
       </div>
+
+      {/* Preview Modal */}
+      <PreviewModal open={previewOpen} onOpenChange={setPreviewOpen} story={story} />
     </div>
   )
 }
