@@ -1,10 +1,15 @@
 /**
  * Desktop page - main container for the player experience
- * Will be enhanced in Phase 2 with actual shell components
+ * Displays faux-desktop with windows, taskbar, and desktop icons
  */
 
 import { useEffect } from 'react'
 import { usePlayerStore } from '../stores/playerStore'
+import { useUIStore } from '../stores/uiStore'
+import { Desktop } from '../components/shell/Desktop'
+import { Taskbar } from '../components/shell/Taskbar'
+import { WindowManager } from '../components/shell/WindowManager'
+import { PlaceholderApp } from '../components/apps/PlaceholderApp'
 import type { Story } from '../../types'
 
 interface DesktopPageProps {
@@ -13,6 +18,7 @@ interface DesktopPageProps {
 
 export function DesktopPage({ story }: DesktopPageProps) {
   const playerState = usePlayerStore((state) => state.playerState)
+  const closeApp = useUIStore((state) => state.closeApp)
 
   useEffect(() => {
     // Full screen if possible
@@ -35,9 +41,25 @@ export function DesktopPage({ story }: DesktopPageProps) {
     )
   }
 
+  const renderAppContent = (appId: string) => {
+    switch (appId) {
+      case 'email':
+      case 'im':
+      case 'calendar':
+      case 'files':
+        return <PlaceholderApp appName={appId.toUpperCase()} />
+      default:
+        return <PlaceholderApp appName={appId} />
+    }
+  }
+
+  const handleAppClose = (appId: string) => {
+    closeApp(appId)
+  }
+
   return (
     <div
-      className="w-full h-screen overflow-hidden"
+      className="w-full h-screen overflow-hidden relative"
       style={{
         backgroundColor: story.theme.backgroundColor || '#1a1a1a',
         color: story.theme.textColor || '#ffffff',
@@ -45,13 +67,18 @@ export function DesktopPage({ story }: DesktopPageProps) {
         fontSize: `${story.theme.fontSize.normal}px`,
       }}
     >
-      {/* Placeholder for desktop shell - will be replaced in Phase 2 */}
-      <div className="flex items-center justify-center w-full h-full">
-        <div className="text-center">
-          <p className="text-2xl mb-4">Desktop Shell Loading...</p>
-          <p className="text-gray-400">Player state initialized</p>
-        </div>
-      </div>
+      {/* Desktop background and icons */}
+      <Desktop story={story} />
+
+      {/* Window manager renders open windows */}
+      <WindowManager
+        story={story}
+        renderAppContent={renderAppContent}
+        onAppClose={handleAppClose}
+      />
+
+      {/* Taskbar at bottom */}
+      <Taskbar story={story} />
     </div>
   )
 }
