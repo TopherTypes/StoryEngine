@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { Trash2 } from 'lucide-react'
 import { useStoryStore } from '../stores/storyStore'
 import { useUIStore } from '../stores/uiStore'
 import type { Story } from '../types'
@@ -7,7 +6,11 @@ import { Button } from '../components/common/Button'
 import { StoryCard } from '../components/dashboard/StoryCard'
 import { CreateStoryModal } from '../components/dashboard/CreateStoryModal'
 
-export function DashboardPage() {
+interface DashboardPageProps {
+  onEditStory: (storyId: string) => void
+}
+
+export function DashboardPage({ onEditStory }: DashboardPageProps) {
   const { stories, deleteStory, loadStories } = useStoryStore()
   const { isCreateModalOpen, openCreateModal, closeCreateModal, showToast } = useUIStore()
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
@@ -43,8 +46,7 @@ export function DashboardPage() {
   }
 
   const handleEdit = (story: Story) => {
-    // Navigate to editor (Phase 3)
-    console.log('Edit story:', story.id)
+    onEditStory(story.id)
   }
 
   return (
