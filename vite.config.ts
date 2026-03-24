@@ -9,7 +9,7 @@ export default defineConfig({
     open: true,
   },
   build: {
-    outDir: '.',
+    outDir: 'docs',
     sourcemap: false,
   },
 })
