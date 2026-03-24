@@ -11,6 +11,8 @@ import { Taskbar } from '../components/shell/Taskbar'
 import { WindowManager } from '../components/shell/WindowManager'
 import { PlaceholderApp } from '../components/apps/PlaceholderApp'
 import { FileExplorer } from '../components/apps/FileExplorer'
+import { EmailApp } from '../components/apps/EmailApp'
+import { IMApp } from '../components/apps/IMApp'
 import type { Story } from '../../types'
 
 interface DesktopPageProps {
@@ -47,7 +49,9 @@ export function DesktopPage({ story }: DesktopPageProps) {
       case 'files':
         return <FileExplorer story={story} />
       case 'email':
+        return <EmailApp story={story} />
       case 'im':
+        return <IMApp story={story} />
       case 'calendar':
         return <PlaceholderApp appName={appId.toUpperCase()} />
       default:
