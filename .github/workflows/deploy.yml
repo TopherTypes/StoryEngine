@@ -20,11 +20,7 @@ jobs:
 
       - run: npm install
 
-      - run: rm -rf index.html assets/ vite.svg
-        name: Clean previous build output
-        continue-on-error: true
-
-      - run: npm run build
+      - run: npm run build -- --emptyOutDir
         env:
           NODE_ENV: production
 
