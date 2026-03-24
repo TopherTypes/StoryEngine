@@ -27,7 +27,9 @@ jobs:
       - run: ls -la dist/ && ls -la dist/assets/
         name: Verify build output
 
-      - uses: peaceiris/actions-gh-pages@v3
+      - uses: EndBug/add-and-commit@v9
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
+          add: 'dist'
+          message: 'chore: build dist folder [skip ci]'
+          push: true
+          default_author: github_actions
