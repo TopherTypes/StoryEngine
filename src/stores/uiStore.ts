@@ -52,3 +52,4 @@ export const useUIStore = create<UIStore>((set) => ({
   },
   clearToast: () => set({ toast: null }),
 }))
+
