@@ -21,7 +21,6 @@ const buildOptions = {
   outdir: outDir,
   outbase: 'src',
   format: 'esm',
-  splitting: true,
   sourcemap: isDev,
   minify: isProduction,
   target: ['es2020'],
@@ -74,6 +73,14 @@ async function build() {
       }
     }
 
+    // Add CSS link to head if not present
+    if (!htmlContent.includes('href="./assets/style.css"')) {
+      htmlContent = htmlContent.replace(
+        '<title>StoryEngine - Authoring Tool</title>',
+        '<title>StoryEngine - Authoring Tool</title>\n    <link rel="stylesheet" href="./assets/style.css">'
+      );
+    }
+
     // Update script reference to use the bundled output
     htmlContent = htmlContent.replace(
       '<script type="module" src="/src/main.tsx"><\/script>',
@@ -81,7 +88,7 @@ async function build() {
     );
 
     fs.writeFileSync(indexDest, htmlContent, 'utf-8');
-    console.log('📄 Updated index.html');
+    console.log('📄 Updated index.html with CSS and JS references');
 
     // Copy favicon and any public assets
     const favicon = path.join(__dirname, 'vite.svg');
