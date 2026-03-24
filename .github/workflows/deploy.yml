@@ -20,16 +20,16 @@ jobs:
 
       - run: npm install
 
-      - run: npm run build -- --emptyOutDir
+      - run: npm run build
         env:
           NODE_ENV: production
 
-      - run: ls -la index.html && ls -la assets/
+      - run: ls -la docs/ && ls -la docs/assets/
         name: Verify build output
 
       - uses: EndBug/add-and-commit@v9
         with:
-          add: 'index.html assets/ vite.svg'
-          message: 'chore: build root directory [skip ci]'
+          add: 'docs'
+          message: 'chore: build docs folder [skip ci]'
           push: true
           default_author: github_actions
