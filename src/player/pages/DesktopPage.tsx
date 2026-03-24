@@ -6,6 +6,7 @@
 import { useEffect } from 'react'
 import { usePlayerStore } from '../stores/playerStore'
 import { useUIStore } from '../stores/uiStore'
+import { useEndingTrigger } from '../hooks/useEndingTrigger'
 import { Desktop } from '../components/shell/Desktop'
 import { Taskbar } from '../components/shell/Taskbar'
 import { WindowManager } from '../components/shell/WindowManager'
@@ -14,6 +15,7 @@ import { FileExplorer } from '../components/apps/FileExplorer'
 import { EmailApp } from '../components/apps/EmailApp'
 import { IMApp } from '../components/apps/IMApp'
 import { CalendarApp } from '../components/apps/CalendarApp'
+import { EndingScreen } from '../components/ui/EndingScreen'
 import type { Story } from '../../types'
 
 interface DesktopPageProps {
@@ -23,6 +25,7 @@ interface DesktopPageProps {
 export function DesktopPage({ story }: DesktopPageProps) {
   const playerState = usePlayerStore((state) => state.playerState)
   const closeApp = useUIStore((state) => state.closeApp)
+  const endingTriggered = useEndingTrigger(story)
 
   useEffect(() => {
     // Full screen if possible
@@ -86,6 +89,14 @@ export function DesktopPage({ story }: DesktopPageProps) {
 
       {/* Taskbar at bottom */}
       <Taskbar story={story} />
+
+      {/* Ending screen */}
+      {endingTriggered && (
+        <EndingScreen story={story} onRestart={() => {
+          // After restart, user will be logged out and can log back in
+          window.location.href = window.location.pathname
+        }} />
+      )}
     </div>
   )
 }
