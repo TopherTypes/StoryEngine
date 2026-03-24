@@ -10,6 +10,7 @@ import { Desktop } from '../components/shell/Desktop'
 import { Taskbar } from '../components/shell/Taskbar'
 import { WindowManager } from '../components/shell/WindowManager'
 import { PlaceholderApp } from '../components/apps/PlaceholderApp'
+import { FileExplorer } from '../components/apps/FileExplorer'
 import type { Story } from '../../types'
 
 interface DesktopPageProps {
@@ -43,10 +44,11 @@ export function DesktopPage({ story }: DesktopPageProps) {
 
   const renderAppContent = (appId: string) => {
     switch (appId) {
+      case 'files':
+        return <FileExplorer story={story} />
       case 'email':
       case 'im':
       case 'calendar':
-      case 'files':
         return <PlaceholderApp appName={appId.toUpperCase()} />
       default:
         return <PlaceholderApp appName={appId} />
