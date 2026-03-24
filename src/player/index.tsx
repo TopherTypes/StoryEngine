@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react'
 import { usePlayerStore } from './stores/playerStore'
 import { useAutoSaveProgress } from './hooks/useAutoSaveProgress'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { LoginPage } from './pages/LoginPage'
 import { DesktopPage } from './pages/DesktopPage'
 import { resumeSession } from './storage/sessionManager'
@@ -50,24 +51,28 @@ export function PlayerApp({ story }: PlayerAppProps) {
     }
   }, [playerState])
 
-  if (isChecking) {
-    return (
-      <div
-        className="min-h-screen flex items-center justify-center"
-        style={{
-          backgroundColor: story.theme.backgroundColor || '#1a1a1a',
-        }}
-      >
-        <p style={{ color: story.theme.textColor || '#ffffff' }}>
-          Loading...
-        </p>
-      </div>
-    )
-  }
+  const content = (() => {
+    if (isChecking) {
+      return (
+        <div
+          className="min-h-screen flex items-center justify-center"
+          style={{
+            backgroundColor: story.theme.backgroundColor || '#1a1a1a',
+          }}
+        >
+          <p style={{ color: story.theme.textColor || '#ffffff' }}>
+            Loading...
+          </p>
+        </div>
+      )
+    }
 
-  if (!isLoggedIn) {
-    return <LoginPage story={story} onLoginSuccess={() => setIsLoggedIn(true)} />
-  }
+    if (!isLoggedIn) {
+      return <LoginPage story={story} onLoginSuccess={() => setIsLoggedIn(true)} />
+    }
 
-  return <DesktopPage story={story} />
+    return <DesktopPage story={story} />
+  })()
+
+  return <ErrorBoundary story={story}>{content}</ErrorBoundary>
 }
