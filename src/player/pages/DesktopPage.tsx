@@ -13,6 +13,7 @@ import { PlaceholderApp } from '../components/apps/PlaceholderApp'
 import { FileExplorer } from '../components/apps/FileExplorer'
 import { EmailApp } from '../components/apps/EmailApp'
 import { IMApp } from '../components/apps/IMApp'
+import { CalendarApp } from '../components/apps/CalendarApp'
 import type { Story } from '../../types'
 
 interface DesktopPageProps {
@@ -53,7 +54,7 @@ export function DesktopPage({ story }: DesktopPageProps) {
       case 'im':
         return <IMApp story={story} />
       case 'calendar':
-        return <PlaceholderApp appName={appId.toUpperCase()} />
+        return <CalendarApp story={story} />
       default:
         return <PlaceholderApp appName={appId} />
     }
