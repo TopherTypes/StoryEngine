@@ -347,7 +347,7 @@ class Renderer {
     }
 
     if (participant.profilePicture) {
-      return `<img src="${participant.profilePicture}" class="im-avatar" alt="${this.escapeHtml(participant.displayName || participant.name || 'User')}">`;
+      return `<img src="${participant.profilePicture}" class="im-avatar">`;
     }
 
     // Generate initials fallback
