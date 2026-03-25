@@ -54,6 +54,22 @@ class Renderer {
       btn.removeEventListener('click', this.handleTaskbarClick);
       btn.addEventListener('click', (e) => this.handleTaskbarClick(e));
     });
+
+    // Setup fullscreen button
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    if (fullscreenBtn) {
+      fullscreenBtn.addEventListener('click', () => this.toggleFullscreen());
+    }
+
+    // Setup reset button
+    const resetBtn = document.getElementById('resetBtn');
+    if (resetBtn) {
+      resetBtn.addEventListener('click', () => {
+        if (window.playerApp) {
+          window.playerApp.resetStory();
+        }
+      });
+    }
   }
 
   // Handle taskbar button click
@@ -416,6 +432,39 @@ class Renderer {
     errorEl.style.display = 'none';
   }
 
+  // Show error modal (for critical errors)
+  showErrorModal(title, message) {
+    const modal = document.createElement('div');
+    modal.className = 'error-modal';
+    modal.innerHTML = `
+      <div class="error-modal-container">
+        <div class="error-modal-title">⚠️ ${title}</div>
+        <div class="error-modal-message">${message}</div>
+        <button class="error-modal-btn">OK</button>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const btn = modal.querySelector('.error-modal-btn');
+    btn.addEventListener('click', () => {
+      modal.remove();
+    });
+
+    btn.focus();
+  }
+
+  // Render empty state
+  renderEmptyState(title, message) {
+    return `
+      <div class="empty-state">
+        <div class="empty-state-icon">📭</div>
+        <div class="empty-state-title">${title}</div>
+        <div class="empty-state-message">${message}</div>
+      </div>
+    `;
+  }
+
   // Update window content
   updateWindowContent(windowId, content) {
     const window = this.openWindows.get(windowId);
@@ -693,6 +742,26 @@ class Renderer {
     }, 0);
 
     return html;
+  }
+
+  // Toggle fullscreen mode
+  toggleFullscreen() {
+    const desktopScreen = document.getElementById('desktopScreen');
+    if (!desktopScreen) return;
+
+    // Try to use Fullscreen API first
+    if (!document.fullscreenElement) {
+      desktopScreen.requestFullscreen?.().catch(() => {
+        // Fallback to CSS-based fullscreen
+        document.body.classList.add('fullscreen');
+      });
+    } else {
+      document.exitFullscreen?.();
+      document.body.classList.remove('fullscreen');
+    }
+
+    // Also toggle CSS fullscreen class
+    document.body.classList.toggle('fullscreen');
   }
 }
 

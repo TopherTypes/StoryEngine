@@ -26,6 +26,12 @@ class PlayerApp {
         return;
       }
 
+      // Validate story data
+      if (!this.validateStory(this.story)) {
+        this.showError('Story data is invalid or corrupted');
+        return;
+      }
+
       // Check if saved game exists
       const savedState = await playerState.getGameState(this.story.id);
 
@@ -50,12 +56,20 @@ class PlayerApp {
     // Try URL parameter first
     const storyUrl = getUrlParam('story');
     if (storyUrl) {
-      this.story = await loadJSONFromUrl(storyUrl);
+      try {
+        this.story = await loadJSONFromUrl(storyUrl);
+      } catch (e) {
+        console.error('Failed to load story from URL:', e);
+      }
     }
 
     // Try localStorage (from authoring tool)
     if (!this.story) {
-      this.story = loadStoryFromLocalStorage('storyData');
+      try {
+        this.story = loadStoryFromLocalStorage('storyData');
+      } catch (e) {
+        console.error('Failed to load story from localStorage:', e);
+      }
     }
 
     // Try hardcoded test story
@@ -64,6 +78,28 @@ class PlayerApp {
     }
 
     return !!this.story;
+  }
+
+  validateStory(story) {
+    // Check required fields
+    if (!story.id || typeof story.id !== 'string') return false;
+    if (!story.title || typeof story.title !== 'string') return false;
+    if (!story.login || !story.login.username || !story.login.password) return false;
+
+    // Check arrays
+    if (!Array.isArray(story.artefacts)) return false;
+    if (!Array.isArray(story.emailSenders)) return false;
+    if (!Array.isArray(story.imParticipants)) return false;
+
+    // Validate artefacts
+    for (const artefact of story.artefacts) {
+      if (!artefact.id || !artefact.type) return false;
+    }
+
+    // Check ending
+    if (!story.ending || !story.ending.title) return false;
+
+    return true;
   }
 
   setupLoginHandler() {
@@ -170,7 +206,8 @@ class PlayerApp {
     const availableEmails = progressionEngine.getAvailableArtefacts('email');
 
     if (availableEmails.length === 0) {
-      alert('No emails available yet');
+      const content = this.renderer.renderEmptyState('📧 Email', 'No emails available yet. Check back later.');
+      this.renderer.createWindow('📧 Email', 'email', content);
       return;
     }
 
@@ -212,7 +249,8 @@ class PlayerApp {
     const availableMessages = progressionEngine.getAvailableArtefacts('im');
 
     if (availableMessages.length === 0) {
-      alert('No messages available yet');
+      const content = this.renderer.renderEmptyState('💬 Messages', 'No messages available yet. Check back later.');
+      this.renderer.createWindow('💬 Messages', 'im', content);
       return;
     }
 
