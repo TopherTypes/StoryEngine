@@ -150,7 +150,22 @@
             </div>
             <div class="form-group">
               <label>Wallpaper</label>
-              <input type="text" id="settings-wallpaper" placeholder="Path to background image (optional)">
+              <div id="wallpaper-upload-area" class="wallpaper-upload-area">
+                <div class="wallpaper-preview-container">
+                  <div id="wallpaper-preview" class="wallpaper-preview">
+                    <p class="preview-placeholder">No wallpaper selected</p>
+                  </div>
+                </div>
+                <div class="wallpaper-controls">
+                  <input type="file" id="settings-wallpaper" accept="image/*" style="display: none;">
+                  <button type="button" id="wallpaper-upload-btn" onclick="document.getElementById('settings-wallpaper').click()">
+                    Choose Image or Drag Here
+                  </button>
+                  <button type="button" id="wallpaper-clear-btn" class="secondary" onclick="app.clearWallpaper()" style="display: none;">
+                    Clear Wallpaper
+                  </button>
+                </div>
+              </div>
             </div>
             <div class="form-group">
               <label>Custom Colors (Optional)</label>
