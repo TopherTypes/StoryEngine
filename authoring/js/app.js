@@ -25,6 +25,9 @@ const app = {
     // Set up auto-save
     this.setupAutoSave();
 
+    // Set up keyboard shortcuts
+    this.setupKeyboardShortcuts();
+
     console.log('Initialization complete');
   },
 
@@ -73,6 +76,102 @@ const app = {
         console.log('Auto-saved story');
       }
     }, 30000); // Every 30 seconds
+  },
+
+  // Set up keyboard shortcuts
+  setupKeyboardShortcuts() {
+    document.addEventListener('keydown', (e) => {
+      // Ctrl/Cmd + S: Save & Validate
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        this.saveStory();
+        this.showToast('✓ Story saved');
+      }
+
+      // Ctrl/Cmd + N: Create new artefact
+      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+        e.preventDefault();
+        this.createArtefact();
+        this.showToast('New artefact created');
+      }
+
+      // Ctrl/Cmd + P: Open preview
+      if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+        e.preventDefault();
+        this.previewStory();
+      }
+
+      // Ctrl/Cmd + ?: Show keyboard shortcuts help
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === '?') {
+        e.preventDefault();
+        this.showKeyboardShortcuts();
+      }
+
+      // Escape: Close modals
+      if (e.key === 'Escape') {
+        const conditionModal = document.getElementById('condition-modal');
+        if (conditionModal && conditionModal.classList.contains('active')) {
+          this.closeConditionModal();
+        }
+      }
+    });
+  },
+
+  // Show keyboard shortcuts help dialog
+  showKeyboardShortcuts() {
+    const shortcuts = [
+      { key: 'Ctrl+S / Cmd+S', action: 'Save story' },
+      { key: 'Ctrl+N / Cmd+N', action: 'Create new artefact' },
+      { key: 'Ctrl+P / Cmd+P', action: 'Preview story' },
+      { key: 'Ctrl+Shift+? / Cmd+Shift+?', action: 'Show this help' },
+      { key: 'Escape', action: 'Close modal' }
+    ];
+
+    const shortcutList = shortcuts
+      .map(s => `<tr><td style="padding: 8px; border-bottom: 1px solid var(--border-color); font-family: monospace; color: var(--terminal-green);">${s.key}</td><td style="padding: 8px; border-bottom: 1px solid var(--border-color);">${s.action}</td></tr>`)
+      .join('');
+
+    const html = `
+      <div style="margin-bottom: 16px;">
+        <p style="color: var(--text-secondary); margin-top: 0;">Use these keyboard shortcuts to speed up your workflow:</p>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tbody>${shortcutList}</tbody>
+        </table>
+      </div>
+    `;
+
+    UI.alert(html, 'Keyboard Shortcuts');
+  },
+
+  // Show toast notification
+  showToast(message) {
+    const existing = document.getElementById('toast-notification');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    toast.id = 'toast-notification';
+    toast.style.cssText = `
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      padding: 12px 16px;
+      border-radius: 4px;
+      border: 1px solid var(--border-color);
+      z-index: 10000;
+      font-size: 14px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      animation: slideIn 0.3s ease-out;
+    `;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transition = 'opacity 0.3s ease-out';
+      setTimeout(() => toast.remove(), 300);
+    }, 2000);
   },
 
   // Navigation
@@ -172,8 +271,38 @@ const app = {
 
   // Filter artefacts
   filterArtefacts() {
+    const searchText = document.getElementById('artefact-search')?.value.toLowerCase() || '';
     const filterType = document.getElementById('type-filter')?.value || '';
-    Renderer.renderArtefactList(this.story, filterType);
+    const filterStatus = document.getElementById('status-filter')?.value || '';
+
+    // Filter artefacts based on all criteria
+    const filtered = this.story.artefacts.filter(artefact => {
+      // Type filter
+      if (filterType && artefact.type !== filterType) return false;
+
+      // Status filter
+      if (filterStatus === 'locked' && !artefact.locked && (!artefact.releaseTriggers || artefact.releaseTriggers.length === 0)) return false;
+      if (filterStatus === 'unlocked' && (artefact.locked || (artefact.releaseTriggers && artefact.releaseTriggers.length > 0))) return false;
+
+      // Search filter - search in title and tags
+      if (searchText) {
+        const title = artefact.title.toLowerCase();
+        const tags = (artefact.tags || []).join(' ').toLowerCase();
+        if (!title.includes(searchText) && !tags.includes(searchText)) return false;
+      }
+
+      return true;
+    });
+
+    // Render filtered list
+    Renderer.renderArtefactListFiltered(this.story, filtered);
+  },
+
+  clearArtefactFilters() {
+    document.getElementById('artefact-search').value = '';
+    document.getElementById('type-filter').value = '';
+    document.getElementById('status-filter').value = '';
+    this.filterArtefacts();
   },
 
   // Condition builder
