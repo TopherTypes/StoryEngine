@@ -59,16 +59,52 @@ const UI = {
     if (loginCheckbox) {
       loginCheckbox.addEventListener('change', () => {
         Renderer.toggleLoginFields();
-        app.saveStory();
+        app.updateStoryField('loginRequired', loginCheckbox.checked);
       });
     }
 
-    // Form auto-save
-    document.querySelectorAll('input, textarea, select').forEach(input => {
-      if (!input.id.includes('new-')) {
-        input.addEventListener('change', () => {
-          app.saveStory();
+    // Story field bindings - map form element ID to story property
+    const storyFieldBindings = {
+      'story-name': 'title',
+      'story-author': 'author',
+      'story-description': 'description',
+      'story-version': 'version',
+      'settings-story-name': 'title',
+      'settings-story-author': 'author',
+      'settings-story-description': 'description',
+      'settings-story-version': 'version',
+      'settings-story-tags': 'tags',
+      'settings-theme': 'theme',
+      'settings-wallpaper': 'wallpaper',
+      'settings-login-message': 'loginMessage',
+      'settings-login-username': 'loginUsername',
+      'settings-login-password': 'loginPassword',
+      'settings-ending-title': 'endingTitle',
+      'settings-ending-message': 'endingMessage',
+      'settings-ending-condition': 'endingCondition',
+      'settings-ending-value': 'endingValue',
+      'calendar-owner': 'calendarOwner',
+      'calendar-start-date': 'calendarStartDate'
+    };
+
+    Object.entries(storyFieldBindings).forEach(([elementId, storyField]) => {
+      const element = document.getElementById(elementId);
+      if (element) {
+        element.addEventListener('change', () => {
+          const value = element.type === 'checkbox' ? element.checked : element.value;
+          app.updateStoryField(storyField, value);
         });
+      }
+    });
+
+    // Form auto-save for artefact fields
+    document.addEventListener('change', (e) => {
+      // Skip new entity inputs and condition builder fields
+      if (!e.target.id.includes('new-') && !e.target.id.includes('condition-')) {
+        // Only save if it's an artefact field or story field
+        if (e.target.id.startsWith('artefact-') || e.target.closest('.modal')) {
+          app.saveStory();
+        }
       }
     });
   },
@@ -153,7 +189,6 @@ const UI = {
             <label>Artefact must be opened</label>
             <select id="condition-artefact-id">
               <option value="">-- Select artefact --</option>
-              <!-- Will be populated by app.js -->
             </select>
           </div>
         `;
@@ -165,7 +200,6 @@ const UI = {
             <label>Artefact must be read</label>
             <select id="condition-artefact-id">
               <option value="">-- Select artefact --</option>
-              <!-- Will be populated by app.js -->
             </select>
           </div>
         `;
@@ -186,7 +220,6 @@ const UI = {
             <label>App/Folder opened</label>
             <select id="condition-app-id">
               <option value="">-- Select folder --</option>
-              <!-- Will be populated by app.js -->
             </select>
           </div>
         `;
@@ -194,6 +227,39 @@ const UI = {
     }
 
     fieldsContainer.innerHTML = fieldsHtml;
+
+    // Populate dropdowns for artefact/folder selects
+    if (type === 'opened' || type === 'read') {
+      this.populateArtefactDropdown();
+    } else if (type === 'app') {
+      this.populateFolderDropdown();
+    }
+  },
+
+  // Populate artefact dropdown in condition builder
+  populateArtefactDropdown() {
+    const select = document.getElementById('condition-artefact-id');
+    if (!select || !app.story) return;
+
+    app.story.artefacts.forEach(artefact => {
+      const option = document.createElement('option');
+      option.value = artefact.id;
+      option.textContent = `${artefact.title} (${artefact.type})`;
+      select.appendChild(option);
+    });
+  },
+
+  // Populate folder dropdown in condition builder
+  populateFolderDropdown() {
+    const select = document.getElementById('condition-app-id');
+    if (!select || !app.story) return;
+
+    app.story.folders.forEach(folder => {
+      const option = document.createElement('option');
+      option.value = folder.id;
+      option.textContent = folder.name;
+      select.appendChild(option);
+    });
   },
 
   // Show validation message
