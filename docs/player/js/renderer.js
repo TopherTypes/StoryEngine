@@ -31,6 +31,9 @@ class Renderer {
     // Apply theme
     this.applyTheme(this.story.theme);
 
+    // Apply wallpaper
+    this.applyWallpaper(this.story.wallpaper);
+
     // Set up taskbar buttons
     this.setupTaskbar();
 
@@ -50,6 +53,24 @@ class Renderer {
     if (theme.accentColor) root.style.setProperty('--accent-secondary', theme.accentColor);
     if (theme.backgroundColor) root.style.setProperty('--bg-primary', theme.backgroundColor);
     if (theme.textColor) root.style.setProperty('--text-primary', theme.textColor);
+  }
+
+  // Apply wallpaper to desktop background
+  applyWallpaper(wallpaperPath) {
+    const desktopEl = document.getElementById('desktop');
+    if (!desktopEl || !wallpaperPath) {
+      return;
+    }
+
+    // Clear existing background image
+    desktopEl.style.backgroundImage = '';
+
+    // Apply wallpaper as background
+    desktopEl.style.backgroundImage = `url('${wallpaperPath}')`;
+    desktopEl.style.backgroundSize = 'cover';
+    desktopEl.style.backgroundPosition = 'center';
+    desktopEl.style.backgroundRepeat = 'no-repeat';
+    desktopEl.style.backgroundAttachment = 'fixed';
   }
 
   // Set up taskbar buttons
