@@ -162,16 +162,33 @@ class PlayerApp {
   }
 
   async continueGame() {
-    // Initialize progression engine
-    progressionEngine = new ProgressionEngine(this.story, this.gameState);
+    try {
+      console.log('[StoryEngine] continueGame: Initializing progression engine...');
+      // Initialize progression engine
+      progressionEngine = new ProgressionEngine(this.story, this.gameState);
+      console.log('[StoryEngine] continueGame: Progression engine initialized');
 
-    // Show desktop
-    this.renderer = new Renderer(this.story);
-    this.renderer.showDesktop(this.gameState);
-    this.setupDesktopHandlers();
+      console.log('[StoryEngine] continueGame: Creating renderer...');
+      // Show desktop
+      this.renderer = new Renderer(this.story);
+      console.log('[StoryEngine] continueGame: Renderer created');
 
-    // Start update loop
-    this.startUpdateLoop();
+      console.log('[StoryEngine] continueGame: Showing desktop...');
+      this.renderer.showDesktop(this.gameState);
+      console.log('[StoryEngine] continueGame: Desktop shown');
+
+      console.log('[StoryEngine] continueGame: Setting up desktop handlers...');
+      this.setupDesktopHandlers();
+      console.log('[StoryEngine] continueGame: Desktop handlers set up');
+
+      console.log('[StoryEngine] continueGame: Starting update loop...');
+      // Start update loop
+      this.startUpdateLoop();
+      console.log('[StoryEngine] continueGame: Update loop started - game ready');
+    } catch (e) {
+      console.error('[StoryEngine] continueGame error:', e);
+      this.showError('Failed to resume game: ' + e.message);
+    }
   }
 
   setupDesktopHandlers() {
