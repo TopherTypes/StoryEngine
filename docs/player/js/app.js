@@ -26,6 +26,12 @@ class PlayerApp {
         return;
       }
 
+      // Validate story data
+      if (!this.validateStory(this.story)) {
+        this.showError('Story data is invalid or corrupted');
+        return;
+      }
+
       // Check if saved game exists
       const savedState = await playerState.getGameState(this.story.id);
 
@@ -50,12 +56,20 @@ class PlayerApp {
     // Try URL parameter first
     const storyUrl = getUrlParam('story');
     if (storyUrl) {
-      this.story = await loadJSONFromUrl(storyUrl);
+      try {
+        this.story = await loadJSONFromUrl(storyUrl);
+      } catch (e) {
+        console.error('Failed to load story from URL:', e);
+      }
     }
 
     // Try localStorage (from authoring tool)
     if (!this.story) {
-      this.story = loadStoryFromLocalStorage('storyData');
+      try {
+        this.story = loadStoryFromLocalStorage('storyData');
+      } catch (e) {
+        console.error('Failed to load story from localStorage:', e);
+      }
     }
 
     // Try hardcoded test story
@@ -64,6 +78,28 @@ class PlayerApp {
     }
 
     return !!this.story;
+  }
+
+  validateStory(story) {
+    // Check required fields
+    if (!story.id || typeof story.id !== 'string') return false;
+    if (!story.title || typeof story.title !== 'string') return false;
+    if (!story.login || !story.login.username || !story.login.password) return false;
+
+    // Check arrays
+    if (!Array.isArray(story.artefacts)) return false;
+    if (!Array.isArray(story.emailSenders)) return false;
+    if (!Array.isArray(story.imParticipants)) return false;
+
+    // Validate artefacts
+    for (const artefact of story.artefacts) {
+      if (!artefact.id || !artefact.type) return false;
+    }
+
+    // Check ending
+    if (!story.ending || !story.ending.title) return false;
+
+    return true;
   }
 
   setupLoginHandler() {
@@ -170,7 +206,8 @@ class PlayerApp {
     const availableEmails = progressionEngine.getAvailableArtefacts('email');
 
     if (availableEmails.length === 0) {
-      alert('No emails available yet');
+      const content = this.renderer.renderEmptyState('📧 Email', 'No emails available yet. Check back later.');
+      this.renderer.createWindow('📧 Email', 'email', content);
       return;
     }
 
@@ -212,7 +249,8 @@ class PlayerApp {
     const availableMessages = progressionEngine.getAvailableArtefacts('im');
 
     if (availableMessages.length === 0) {
-      alert('No messages available yet');
+      const content = this.renderer.renderEmptyState('💬 Messages', 'No messages available yet. Check back later.');
+      this.renderer.createWindow('💬 Messages', 'im', content);
       return;
     }
 
@@ -239,6 +277,199 @@ class PlayerApp {
 
     // Show thread view
     const content = this.renderer.renderIMThread(conversationId, convMessages);
+    const windowEl = document.querySelector('.window.focused');
+    if (windowEl) {
+      const windowId = windowEl.id.replace('window-', '');
+      this.renderer.updateWindowContent(windowId, content);
+    }
+  }
+
+  openFileExplorerWindow() {
+    // Mark file explorer app as visited
+    this.gameState.markAppVisited('files');
+
+    // Get current folder path (default to root)
+    const currentPath = this.gameState.currentFilePath || '/';
+
+    // Get available files for current folder
+    const availableFiles = this.getFilesInFolder(currentPath);
+
+    // Show file explorer
+    const content = this.renderer.renderFileExplorer(
+      currentPath,
+      availableFiles,
+      (path) => this.navigateToFolder(path),
+      (artefactId) => this.openFileContent(artefactId)
+    );
+
+    const windowId = this.renderer.createWindow('📁 Files', 'files', content);
+
+    // Store window ID in game state for updates
+    this.fileExplorerWindowId = windowId;
+  }
+
+  navigateToFolder(path) {
+    // Update current path in game state
+    if (!this.gameState.currentFilePath) {
+      this.gameState.currentFilePath = '/';
+    }
+    this.gameState.currentFilePath = path;
+    this.gameState.markFolderVisited(path);
+
+    // Get available files for new folder
+    const availableFiles = this.getFilesInFolder(path);
+
+    // Update window content
+    const content = this.renderer.renderFileExplorer(
+      path,
+      availableFiles,
+      (newPath) => this.navigateToFolder(newPath),
+      (artefactId) => this.openFileContent(artefactId)
+    );
+
+    const windowEl = document.querySelector('.window.focused');
+    if (windowEl) {
+      const windowId = windowEl.id.replace('window-', '');
+      this.renderer.updateWindowContent(windowId, content);
+    }
+  }
+
+  getFilesInFolder(folderPath) {
+    const availableArtefacts = progressionEngine.getAvailableArtefacts(['document', 'image', 'audio']);
+
+    // Filter to files in this folder
+    const filesInFolder = availableArtefacts.filter(artefact => {
+      const artPath = artefact.folderPath || '/';
+      return artPath === folderPath;
+    });
+
+    return filesInFolder;
+  }
+
+  openFileContent(artefactId) {
+    const artefact = this.story.artefacts.find(a => a.id === artefactId);
+    if (!artefact) return;
+
+    // Check if password protected and not yet unlocked
+    if (artefact.password && !this.gameState.isPasswordUnlocked(artefactId)) {
+      this.showPasswordPrompt(artefactId, (success) => {
+        if (success) {
+          this.markArtefactOpenAndRoute(artefact, artefactId);
+        }
+      });
+      return;
+    }
+
+    this.markArtefactOpenAndRoute(artefact, artefactId);
+  }
+
+  markArtefactOpenAndRoute(artefact, artefactId) {
+    // Mark as opened
+    this.gameState.markArtefactOpened(artefactId);
+
+    // Route to appropriate viewer based on type
+    if (artefact.type === 'document') {
+      this.openDocumentWindow(artefact);
+    } else if (artefact.type === 'image') {
+      this.openImageWindow(artefact);
+    } else if (artefact.type === 'audio') {
+      this.openAudioWindow(artefact);
+    }
+  }
+
+  showPasswordPrompt(artefactId, callback) {
+    this.renderer.showPasswordPromptModal(artefactId, (password) => {
+      if (password === null) {
+        callback(false);
+        return;
+      }
+
+      const artefact = this.story.artefacts.find(a => a.id === artefactId);
+      if (artefact && artefact.password === password) {
+        this.gameState.unlockPassword(artefactId, password);
+        callback(true);
+      } else {
+        this.renderer.showPasswordError('Incorrect password');
+        // Retry
+        setTimeout(() => {
+          this.showPasswordPrompt(artefactId, callback);
+        }, 500);
+      }
+    });
+  }
+
+  openDocumentWindow(document) {
+    const content = this.renderer.renderDocumentViewer(document);
+    const windowId = this.renderer.createWindow(`📄 ${document.title}`, 'document', content);
+
+    // Mark as read when closed
+    const closeBtn = document.querySelector(`#window-${windowId} .close-btn`);
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        this.gameState.markArtefactRead(document.id);
+      });
+    }
+  }
+
+  openImageWindow(image) {
+    const content = this.renderer.renderImageViewer(image);
+    const windowId = this.renderer.createWindow(`🖼️ ${image.title}`, 'image', content);
+
+    // Mark as read when closed
+    const closeBtn = document.querySelector(`#window-${windowId} .close-btn`);
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        this.gameState.markArtefactRead(image.id);
+      });
+    }
+  }
+
+  openAudioWindow(audio) {
+    const content = this.renderer.renderAudioPlayer(audio);
+    const windowId = this.renderer.createWindow(`🎵 ${audio.title}`, 'audio', content);
+  }
+
+  openCalendarWindow() {
+    // Mark calendar app as visited
+    this.gameState.markAppVisited('calendar');
+
+    // Get available calendar events
+    const availableEvents = this.getAvailableCalendarEvents();
+
+    // Show calendar
+    const content = this.renderer.renderCalendar(availableEvents, (eventId) => {
+      this.showEventDetails(eventId);
+    });
+
+    const windowId = this.renderer.createWindow('📅 Calendar', 'calendar', content);
+  }
+
+  getAvailableCalendarEvents() {
+    // Get calendar events from story
+    if (!this.story.calendarEvents) {
+      return [];
+    }
+
+    const elapsedMinutes = this.gameState.getElapsedMinutes();
+
+    // Filter based on release conditions
+    return this.story.calendarEvents.filter(event => {
+      if (!event.releaseConditions) return true;
+
+      // For now, simple time-based release
+      if (event.releaseConditions.releaseAtTime !== undefined) {
+        return elapsedMinutes >= event.releaseConditions.releaseAtTime;
+      }
+
+      return true;
+    });
+  }
+
+  showEventDetails(eventId) {
+    const event = this.story.calendarEvents.find(e => e.id === eventId);
+    if (!event) return;
+
+    const content = this.renderer.renderEventDetails(event);
     const windowEl = document.querySelector('.window.focused');
     if (windowEl) {
       const windowId = windowEl.id.replace('window-', '');
@@ -333,6 +564,40 @@ class PlayerApp {
           body: 'Hello from IM!',
           displayOrder: 1,
           releaseAtTime: 2
+        },
+        {
+          id: 'doc-001',
+          type: 'document',
+          title: 'Test Document',
+          body: '# Welcome\n\nThis is a **test document** with *markdown* formatting.\n\nYou can read about the story here.',
+          folderPath: '/',
+          releaseAtTime: 0
+        },
+        {
+          id: 'img-001',
+          type: 'image',
+          title: 'Test Image',
+          assetId: 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%2300ff00%22 width=%22200%22 height=%22200%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 font-size=%2224%22 fill=%22%23000%22 text-anchor=%22middle%22 dy=%22.3em%22%3ETest Image%3C/text%3E%3C/svg%3E',
+          caption: 'This is a test image',
+          folderPath: '/',
+          releaseAtTime: 0
+        },
+        {
+          id: 'audio-001',
+          type: 'audio',
+          title: 'Test Audio',
+          assetId: 'data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEAQB8AAAB9AAACABAAZGF0YQIAAAAAAA==',
+          folderPath: '/',
+          releaseAtTime: 0
+        },
+        {
+          id: 'doc-locked-001',
+          type: 'document',
+          title: 'Secret Document',
+          body: '# Confidential Information\n\nThis document contains **sensitive** information that requires a password to access.',
+          folderPath: '/',
+          password: 'secret123',
+          releaseAtTime: 0
         }
       ],
       emailSenders: [
@@ -350,7 +615,35 @@ class PlayerApp {
         }
       ],
       fileStructure: [],
-      calendarConfig: {}
+      calendarConfig: {},
+      calendarEvents: [
+        {
+          id: 'event-001',
+          title: 'Story Briefing',
+          date: new Date().toISOString().split('T')[0],
+          time: '10:00 AM',
+          location: 'Conference Room A',
+          description: 'Initial briefing about the story events.',
+          releaseConditions: { releaseAtTime: 0 }
+        },
+        {
+          id: 'event-002',
+          title: 'Investigation Update',
+          date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+          time: '2:00 PM',
+          description: 'New findings have been discovered.',
+          releaseConditions: { releaseAtTime: 30 }
+        },
+        {
+          id: 'event-003',
+          title: 'Final Conclusion',
+          date: new Date(Date.now() + 172800000).toISOString().split('T')[0],
+          time: '5:00 PM',
+          location: 'Main Office',
+          description: 'Meeting to discuss the final resolution.',
+          releaseConditions: { releaseAtTime: 60 }
+        }
+      ]
     };
   }
 }
