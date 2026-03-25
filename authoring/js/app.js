@@ -602,6 +602,20 @@ const app = {
         }
       }
 
+      // Collect wallpaper asset if present
+      if (this.story.wallpaper && this.assetFiles.has(this.story.wallpaper)) {
+        const file = this.assetFiles.get(this.story.wallpaper);
+        const assetId = this.story.wallpaper.split('/').pop();
+
+        if (!assetMap.has(assetId)) {
+          assets.push({
+            assetId,
+            file
+          });
+          assetMap.set(assetId, true);
+        }
+      }
+
       // Create bundle
       const bundleBlob = await StoryBundle.createBundle(this.story, assets);
       const filename = `${this.story.title.replace(/\s+/g, '-').toLowerCase()}_${Date.now()}.story`;
@@ -686,6 +700,78 @@ const app = {
 
     // Clear file input
     fileInput.value = '';
+  },
+
+  // Wallpaper upload handler
+  handleWallpaperUpload(file) {
+    if (!file) {
+      const fileInput = document.getElementById('settings-wallpaper');
+      if (!fileInput?.files?.length) {
+        return;
+      }
+      file = fileInput.files[0];
+    }
+
+    const ext = file.name.split('.').pop().toLowerCase();
+    const wallpaperId = State.generateId().substring(0, 8);
+    const path = `assets/wallpaper/wallpaper-${wallpaperId}.${ext}`;
+
+    // Store file for bundle export
+    this.assetFiles.set(path, file);
+
+    // Update story
+    this.story.wallpaper = path;
+    this.saveStory();
+
+    // Show preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const preview = document.getElementById('wallpaper-preview');
+      if (preview) {
+        preview.innerHTML = `<img src="${e.target.result}" alt="Wallpaper preview" style="width: 100%; height: 100%; object-fit: cover;">`;
+      }
+
+      // Enable clear button
+      const clearBtn = document.getElementById('wallpaper-clear-btn');
+      if (clearBtn) clearBtn.style.display = 'inline-block';
+    };
+    reader.readAsDataURL(file);
+
+    // Clear file input
+    const fileInput = document.getElementById('settings-wallpaper');
+    if (fileInput) fileInput.value = '';
+
+    const sizeKB = (file.size / 1024).toFixed(2);
+    console.log(`Wallpaper uploaded: ${file.name} (${sizeKB} KB)`);
+  },
+
+  // Clear wallpaper
+  clearWallpaper() {
+    // Clear from story
+    this.story.wallpaper = '';
+
+    // Remove from asset files if present
+    for (const [path, file] of this.assetFiles) {
+      if (path.startsWith('assets/wallpaper/')) {
+        this.assetFiles.delete(path);
+        break;
+      }
+    }
+
+    // Save story
+    this.saveStory();
+
+    // Update preview
+    const preview = document.getElementById('wallpaper-preview');
+    if (preview) {
+      preview.innerHTML = '<p class="preview-placeholder">No wallpaper selected</p>';
+    }
+
+    // Disable clear button
+    const clearBtn = document.getElementById('wallpaper-clear-btn');
+    if (clearBtn) clearBtn.style.display = 'none';
+
+    console.log('Wallpaper cleared');
   }
 };
 

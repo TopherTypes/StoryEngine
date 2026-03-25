@@ -75,7 +75,6 @@ const UI = {
       'settings-story-version': 'version',
       'settings-story-tags': 'tags',
       'settings-theme': 'theme',
-      'settings-wallpaper': 'wallpaper',
       'settings-login-message': 'loginMessage',
       'settings-login-username': 'loginUsername',
       'settings-login-password': 'loginPassword',
@@ -96,6 +95,43 @@ const UI = {
         });
       }
     });
+
+    // Wallpaper file input setup (handled separately due to file upload logic)
+    const wallpaperInput = document.getElementById('settings-wallpaper');
+    if (wallpaperInput) {
+      wallpaperInput.addEventListener('change', (e) => {
+        if (e.target.files?.length > 0) {
+          app.handleWallpaperUpload(e.target.files[0]);
+        }
+      });
+    }
+
+    // Wallpaper drag-and-drop setup
+    const uploadArea = document.getElementById('wallpaper-upload-area');
+    if (uploadArea) {
+      uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+      });
+
+      uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('dragover');
+      });
+
+      uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+
+        if (e.dataTransfer?.files?.length > 0) {
+          const file = e.dataTransfer.files[0];
+          if (file.type.startsWith('image/')) {
+            app.handleWallpaperUpload(file);
+          } else {
+            UI.alert('Please drop an image file');
+          }
+        }
+      });
+    }
 
     // Form auto-save for artefact fields
     document.addEventListener('change', (e) => {
