@@ -315,8 +315,25 @@ class Renderer {
           </div>
           <div class="email-subject">${email.subject}</div>
           <div class="email-body">${email.body}</div>
-        </div>
       `;
+
+      // Render attachments if present
+      if (email.hasAttachment && email.attachments && email.attachments.length > 0) {
+        html += '<div class="email-attachments">';
+        email.attachments.forEach(attachment => {
+          if (attachment.mimeType.startsWith('image/')) {
+            html += `<img src="${attachment.assetId}" alt="Attachment" class="email-attachment-image" style="max-width: 100%; max-height: 300px; margin: 10px 0;">`;
+          } else if (attachment.mimeType.startsWith('audio/')) {
+            html += `<audio controls style="display: block; margin: 10px 0;">
+              <source src="${attachment.assetId}" type="${attachment.mimeType}">
+              Your browser does not support the audio element.
+            </audio>`;
+          }
+        });
+        html += '</div>';
+      }
+
+      html += '</div>';
     });
 
     html += '</div>';
@@ -379,8 +396,25 @@ class Renderer {
           <div class="msg-sender">${participant ? participant.name : msg.senderId}</div>
           <div class="msg-time">${msg.timestamp || ''}</div>
           <div class="msg-body">${msg.body}</div>
-        </div>
       `;
+
+      // Render attachments if present
+      if (msg.hasAttachment && msg.attachments && msg.attachments.length > 0) {
+        html += '<div class="im-attachments">';
+        msg.attachments.forEach(attachment => {
+          if (attachment.mimeType.startsWith('image/')) {
+            html += `<img src="${attachment.assetId}" alt="Attachment" class="im-attachment-image" style="max-width: 100%; max-height: 300px; margin: 10px 0;">`;
+          } else if (attachment.mimeType.startsWith('audio/')) {
+            html += `<audio controls style="display: block; margin: 10px 0;">
+              <source src="${attachment.assetId}" type="${attachment.mimeType}">
+              Your browser does not support the audio element.
+            </audio>`;
+          }
+        });
+        html += '</div>';
+      }
+
+      html += '</div>';
     });
 
     html += '</div>';
