@@ -370,7 +370,8 @@
     <footer>
       <button class="secondary" onclick="app.openPreview()">👁️ Preview</button>
       <button class="secondary" onclick="app.validateStory()">✓ Validate</button>
-      <button onclick="app.exportStory()">⬇️ Export JSON</button>
+      <button onclick="app.exportBundle()">📦 Export Bundle</button>
+      <button class="secondary" onclick="app.exportStory()">⬇️ Export JSON</button>
       <button onclick="app.saveStory()">💾 Save</button>
     </footer>
 
@@ -420,6 +421,7 @@
   </div>
 
   <!-- Scripts -->
+  <script src="../js/bundle.js"></script>
   <script src="js/state.js"></script>
   <script src="js/renderer.js"></script>
   <script src="js/ui.js"></script>

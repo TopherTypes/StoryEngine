@@ -6,6 +6,7 @@
 const app = {
   story: null,
   selectedArtefactId: null,
+  assetFiles: new Map(), // Store File objects for bundle export: assetId -> File
 
   // Initialize the application
   init() {
@@ -364,11 +365,58 @@ const app = {
     UI.showValidation(issues);
   },
 
-  // Export
+  // Export as JSON
   exportStory() {
     const json = State.exportStory(this.story);
     const filename = `${this.story.title.replace(/\s+/g, '-').toLowerCase()}_${Date.now()}.json`;
     UI.downloadFile(json, filename);
+  },
+
+  // Export as bundle (includes assets)
+  async exportBundle() {
+    try {
+      UI.showSpinner('Creating bundle...');
+
+      // Collect assets from artefacts
+      const assets = [];
+      const assetMap = new Map();
+
+      for (const artefact of this.story.artefacts) {
+        if (artefact.assetPath && this.assetFiles.has(artefact.assetPath)) {
+          const file = this.assetFiles.get(artefact.assetPath);
+          const assetId = artefact.assetPath.split('/').pop();
+
+          if (!assetMap.has(assetId)) {
+            assets.push({
+              assetId,
+              file
+            });
+            assetMap.set(assetId, true);
+          }
+        }
+      }
+
+      // Create bundle
+      const bundleBlob = await StoryBundle.createBundle(this.story, assets);
+      const filename = `${this.story.title.replace(/\s+/g, '-').toLowerCase()}_${Date.now()}.story`;
+
+      // Download
+      const url = URL.createObjectURL(bundleBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      UI.hideSpinner();
+      UI.alert(`Bundle exported successfully: ${filename}`);
+    } catch (error) {
+      console.error('Failed to export bundle:', error);
+      UI.hideSpinner();
+      UI.alert(`Failed to export bundle: ${error.message}`);
+    }
   },
 
   // Preview
@@ -385,14 +433,22 @@ const app = {
       return;
     }
 
-    const filename = fileInput.files[0].name;
+    const file = fileInput.files[0];
+    const filename = file.name;
     const path = `assets/images/${filename}`;
+
+    // Store file for bundle export
+    this.assetFiles.set(path, file);
 
     this.updateCurrentArtefact('assetPath', path);
 
     // Update path input for user verification
     const pathInput = document.getElementById('artefact-asset');
     if (pathInput) pathInput.value = path;
+
+    // Show file size for feedback
+    const sizeKB = (file.size / 1024).toFixed(2);
+    console.log(`Image asset uploaded: ${filename} (${sizeKB} KB)`);
 
     // Clear file input
     fileInput.value = '';
@@ -405,14 +461,22 @@ const app = {
       return;
     }
 
-    const filename = fileInput.files[0].name;
+    const file = fileInput.files[0];
+    const filename = file.name;
     const path = `assets/audio/${filename}`;
+
+    // Store file for bundle export
+    this.assetFiles.set(path, file);
 
     this.updateCurrentArtefact('assetPath', path);
 
     // Update path input for user verification
     const pathInput = document.getElementById('artefact-audio-asset');
     if (pathInput) pathInput.value = path;
+
+    // Show file size for feedback
+    const sizeKB = (file.size / 1024).toFixed(2);
+    console.log(`Audio asset uploaded: ${filename} (${sizeKB} KB)`);
 
     // Clear file input
     fileInput.value = '';

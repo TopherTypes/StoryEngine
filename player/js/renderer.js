@@ -621,8 +621,9 @@ class Renderer {
     html += `<div class="image-title">${image.title}</div>`;
 
     html += '<div class="image-container">';
-    if (image.assetId) {
-      html += `<img src="${image.assetId}" alt="${image.title}" class="image-display">`;
+    const assetSrc = image.assetId || image.assetPath; // Support both formats
+    if (assetSrc) {
+      html += `<img src="${assetSrc}" alt="${image.title}" class="image-display">`;
     } else {
       html += '<div class="image-placeholder">Image not available</div>';
     }
@@ -658,9 +659,10 @@ class Renderer {
     html += `<div class="audio-title">${audio.title}</div>`;
 
     html += '<div class="audio-controls">';
-    if (audio.assetId) {
+    const assetSrc = audio.assetId || audio.assetPath; // Support both formats
+    if (assetSrc) {
       html += `<audio controls style="width: 100%; margin: 20px 0;">
-        <source src="${audio.assetId}" type="audio/mpeg">
+        <source src="${assetSrc}" type="audio/mpeg">
         Your browser does not support the audio element.
       </audio>`;
     } else {

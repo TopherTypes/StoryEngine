@@ -11,6 +11,7 @@ class PlayerApp {
     this.updateInterval = null;
     this.selectedEmailThread = null;
     this.selectedIMConversation = null;
+    this.bundleAssets = null; // Assets extracted from bundle
   }
 
   async init() {
@@ -29,7 +30,8 @@ class PlayerApp {
 
       if (!this.story) {
         console.error('[StoryEngine] No story available');
-        this.showError('Failed to load story');
+        console.log('[StoryEngine] Showing bundle load UI');
+        this.showBundleLoadUI();
         return;
       }
 
@@ -68,10 +70,28 @@ class PlayerApp {
   }
 
   async loadStory() {
-    // Try URL parameter first
+    // Try bundle URL parameter first
+    const bundleUrl = getUrlParam('bundle');
+    if (bundleUrl) {
+      try {
+        console.log('[StoryEngine] Loading bundle from URL:', bundleUrl);
+        const bundleBlob = await loadJSONFromUrl(bundleUrl);
+        const result = await StoryBundle.parseBundle(bundleBlob);
+        this.story = result.story;
+        this.bundleAssets = result.assets;
+        console.log('[StoryEngine] Bundle loaded successfully');
+        return !!this.story;
+      } catch (e) {
+        console.error('[StoryEngine] Failed to load bundle from URL:', e);
+        // Fall through to other methods
+      }
+    }
+
+    // Try story JSON URL parameter
     const storyUrl = getUrlParam('story');
     if (storyUrl) {
       try {
+        console.log('[StoryEngine] Loading story from URL:', storyUrl);
         this.story = await loadJSONFromUrl(storyUrl);
       } catch (e) {
         console.error('Failed to load story from URL:', e);
@@ -81,6 +101,7 @@ class PlayerApp {
     // Try localStorage (from authoring tool)
     if (!this.story) {
       try {
+        console.log('[StoryEngine] Loading story from localStorage');
         this.story = loadStoryFromLocalStorage('storyData');
       } catch (e) {
         console.error('Failed to load story from localStorage:', e);
@@ -89,6 +110,7 @@ class PlayerApp {
 
     // Try hardcoded test story
     if (!this.story) {
+      console.log('[StoryEngine] Using test story');
       this.story = this.createTestStory();
     }
 
@@ -444,7 +466,9 @@ class PlayerApp {
   }
 
   openImageWindow(image) {
-    const content = this.renderer.renderImageViewer(image);
+    // Resolve asset URL if from bundle
+    const processedImage = this._resolveAsset(image);
+    const content = this.renderer.renderImageViewer(processedImage);
     const windowId = this.renderer.createWindow(`🖼️ ${image.title}`, 'image', content);
 
     // Mark as read when closed
@@ -457,8 +481,26 @@ class PlayerApp {
   }
 
   openAudioWindow(audio) {
-    const content = this.renderer.renderAudioPlayer(audio);
+    // Resolve asset URL if from bundle
+    const processedAudio = this._resolveAsset(audio);
+    const content = this.renderer.renderAudioPlayer(processedAudio);
     const windowId = this.renderer.createWindow(`🎵 ${audio.title}`, 'audio', content);
+  }
+
+  // Helper to resolve asset URLs from bundles
+  _resolveAsset(artefact) {
+    if (!this.bundleAssets) return artefact;
+
+    const processed = { ...artefact };
+
+    // Try to resolve assetId from bundle
+    if (artefact.assetId && this.bundleAssets[artefact.assetId]) {
+      const asset = this.bundleAssets[artefact.assetId];
+      const blob = new Blob([asset.data], { type: asset.mimeType });
+      processed.assetId = URL.createObjectURL(blob);
+    }
+
+    return processed;
   }
 
   openCalendarWindow() {
@@ -709,6 +751,108 @@ class PlayerApp {
         }
       ]
     };
+  }
+
+  // Bundle loading handlers
+  showBundleLoadUI() {
+    const loadingScreen = document.getElementById('loadingScreen');
+    const bundleLoadUI = document.getElementById('bundleLoadUI');
+
+    if (loadingScreen && bundleLoadUI) {
+      loadingScreen.style.display = 'flex';
+      bundleLoadUI.style.display = 'block';
+    }
+
+    this.setupBundleLoadHandlers();
+  }
+
+  setupBundleLoadHandlers() {
+    const fileInput = document.getElementById('bundleFileInput');
+    const dropZone = document.getElementById('dropZone');
+    const bundleError = document.getElementById('bundleError');
+
+    if (!fileInput || !dropZone) return;
+
+    // File input change handler
+    fileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        await this.loadBundleFile(file, bundleError);
+      }
+    });
+
+    // Drag and drop handlers
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.style.background = 'rgba(255,255,255,0.1)';
+    });
+
+    dropZone.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      dropZone.style.background = 'rgba(255,255,255,0.05)';
+    });
+
+    dropZone.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      dropZone.style.background = 'rgba(255,255,255,0.05)';
+
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        const file = files[0];
+        if (file.name.endsWith('.story') || file.type === 'application/x-story-bundle') {
+          await this.loadBundleFile(file, bundleError);
+        } else {
+          this.showBundleError('Invalid file format. Please use a .story bundle.', bundleError);
+        }
+      }
+    });
+  }
+
+  async loadBundleFile(file, errorElement) {
+    try {
+      if (errorElement) {
+        errorElement.style.display = 'none';
+        errorElement.textContent = '';
+      }
+
+      console.log('[StoryEngine] Loading bundle file:', file.name);
+      const result = await StoryBundle.parseBundle(file);
+
+      this.story = result.story;
+      this.bundleAssets = result.assets;
+
+      console.log('[StoryEngine] Bundle loaded successfully');
+
+      // Continue with initialization
+      const loadingScreen = document.getElementById('loadingScreen');
+      if (loadingScreen) {
+        loadingScreen.style.display = 'flex';
+      }
+
+      await this.init();
+    } catch (error) {
+      console.error('[StoryEngine] Failed to load bundle:', error);
+      this.showBundleError(`Failed to load bundle: ${error.message}`, errorElement);
+    }
+  }
+
+  showBundleError(message, errorElement) {
+    if (errorElement) {
+      errorElement.textContent = message;
+      errorElement.style.display = 'block';
+    }
+    console.error('[StoryEngine]', message);
+  }
+
+  // Get asset data from bundle assets
+  getAssetData(assetId) {
+    if (this.bundleAssets && this.bundleAssets[assetId]) {
+      const asset = this.bundleAssets[assetId];
+      // Convert to data URL for display
+      const blob = new Blob([asset.data], { type: asset.mimeType });
+      return URL.createObjectURL(blob);
+    }
+    return null;
   }
 }
 
