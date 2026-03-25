@@ -144,6 +144,40 @@ interface BaseArtefact {
 }
 ```
 
+### Support Types
+
+#### IM Participant
+
+```typescript
+interface IMParticipant {
+  id: string                        // Unique identifier
+  type: "participant"               // Entity type
+  username: string                  // Handle/username
+  displayName: string               // Display name in chat
+  profilePicture?: string           // Base64 or data URI for avatar (optional)
+}
+```
+
+#### IM Conversation
+
+```typescript
+interface IMConversation {
+  id: string                        // Unique conversation ID
+  name: string                      // Conversation/group name
+}
+```
+
+#### Email Sender
+
+```typescript
+interface EmailSender {
+  id: string                        // Unique identifier
+  name: string                      // Sender display name
+  email: string                     // Sender email address
+  domain?: string                   // Email domain (optional)
+}
+```
+
 ### Release Rules & Conditions
 
 ```typescript
