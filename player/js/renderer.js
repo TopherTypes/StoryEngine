@@ -928,6 +928,36 @@ class Renderer {
       this.enterFullscreen();
     }
   }
+
+  // Show story selector screen
+  showStorySelector() {
+    document.getElementById('loadingScreen').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('desktopScreen').style.display = 'none';
+    document.getElementById('endingScreen').style.display = 'none';
+    document.getElementById('selectorScreen').style.display = 'flex';
+  }
+
+  // Hide story selector screen
+  hideStorySelector() {
+    document.getElementById('selectorScreen').style.display = 'none';
+  }
+
+  // Show start menu overlay
+  showStartMenu() {
+    const overlay = document.getElementById('startMenuOverlay');
+    if (overlay) {
+      overlay.style.display = 'flex';
+    }
+  }
+
+  // Hide start menu overlay
+  hideStartMenu() {
+    const overlay = document.getElementById('startMenuOverlay');
+    if (overlay) {
+      overlay.style.display = 'none';
+    }
+  }
 }
 
 // Global instance placeholder

@@ -30,9 +30,16 @@ class PlayerApp {
 
       if (!this.story) {
         console.error('[StoryEngine] No story available');
-        console.log('[StoryEngine] Showing bundle load UI');
-        this.showBundleLoadUI();
-        return;
+        // Check if skipSelector is set
+        const skipSelector = getUrlParam('skipSelector');
+        if (skipSelector === 'true') {
+          console.log('[StoryEngine] Using test story (skipSelector=true)');
+          this.story = this.createTestStory();
+        } else {
+          console.log('[StoryEngine] Showing story selector');
+          await this.showStorySelector();
+          return;
+        }
       }
 
       // Validate story data
@@ -106,12 +113,6 @@ class PlayerApp {
       } catch (e) {
         console.error('Failed to load story from localStorage:', e);
       }
-    }
-
-    // Try hardcoded test story
-    if (!this.story) {
-      console.log('[StoryEngine] Using test story');
-      this.story = this.createTestStory();
     }
 
     return !!this.story;
@@ -217,6 +218,44 @@ class PlayerApp {
     // Taskbar handlers
     const resetBtn = document.getElementById('resetBtn');
     resetBtn.addEventListener('click', () => this.resetStory());
+
+    // Start menu button
+    const startMenuBtn = document.getElementById('startMenuBtn');
+    if (startMenuBtn) {
+      startMenuBtn.addEventListener('click', () => this.showStartMenu());
+    }
+
+    // Start menu button handlers
+    const startMenuOverlay = document.getElementById('startMenuOverlay');
+    if (startMenuOverlay) {
+      // Close menu when clicking overlay (outside popup)
+      startMenuOverlay.addEventListener('click', (e) => {
+        if (e.target === startMenuOverlay) {
+          this.renderer.hideStartMenu();
+        }
+      });
+    }
+
+    const continueBtn = document.getElementById('startMenuContinueBtn');
+    if (continueBtn) {
+      continueBtn.addEventListener('click', () => {
+        this.renderer.hideStartMenu();
+      });
+    }
+
+    const newStoryBtn = document.getElementById('startMenuNewStoryBtn');
+    if (newStoryBtn) {
+      newStoryBtn.addEventListener('click', () => {
+        this.handleLogout();
+      });
+    }
+
+    const logoutBtn = document.getElementById('startMenuLogoutBtn');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', () => {
+        this.handleLogout();
+      });
+    }
 
     // Window handlers are set up in renderer
   }
@@ -626,6 +665,97 @@ class PlayerApp {
     `;
     document.body.appendChild(errorContainer);
     console.error('App Error:', message);
+  }
+
+  // Show story selector screen
+  async showStorySelector() {
+    // Initialize renderer if needed
+    if (!this.renderer) {
+      this.renderer = new Renderer({});
+    }
+
+    // Show selector screen
+    this.renderer.showStorySelector();
+
+    // Initialize story selector
+    await storySelector.init();
+
+    // Setup selector callbacks
+    storySelector.onStorySelected = async (storyOrId, file) => {
+      try {
+        // Hide selector
+        this.renderer.hideStorySelector();
+
+        // Handle different input types
+        if (typeof storyOrId === 'string') {
+          // String ID
+          if (storyOrId === 'test-story') {
+            this.story = this.createTestStory();
+            console.log('[StoryEngine] Test story loaded from selector');
+          } else {
+            console.error('[Selector] Unknown story ID:', storyOrId);
+            return;
+          }
+        } else if (storyOrId && storyOrId.id) {
+          // Story object
+          this.story = storyOrId;
+          storySelector.addRecentStory(this.story, file?.name || 'Unknown');
+          console.log('[StoryEngine] Story loaded from selector:', this.story.id);
+        }
+
+        // Continue initialization
+        if (this.validateStory(this.story)) {
+          const savedState = await playerState.getGameState(this.story.id);
+          if (savedState) {
+            playerState.currentState = savedState;
+            this.gameState = playerState;
+            this.continueGame();
+          } else {
+            this.renderer = new Renderer(this.story);
+            this.renderer.showLoginScreen();
+            this.setupLoginHandler();
+          }
+        } else {
+          this.showError('Story validation failed');
+        }
+      } catch (e) {
+        console.error('[Selector] Error handling story selection:', e);
+        this.showError('Failed to load story: ' + e.message);
+      }
+    };
+
+    storySelector.onStoryLoaded = (bundleResult) => {
+      console.log('[Selector] Bundle loaded with assets');
+      this.bundleAssets = bundleResult.assets;
+    };
+
+    // Show recent stories
+    storySelector.show();
+  }
+
+  // Show start menu in desktop
+  showStartMenu() {
+    if (this.renderer) {
+      this.renderer.showStartMenu();
+    }
+  }
+
+  // Handle logout from start menu
+  handleLogout() {
+    console.log('[StoryEngine] User logging out');
+    // Save current game state
+    if (this.gameState && this.story) {
+      playerState.saveGameState(this.story.id, this.gameState.currentState);
+    }
+    // Return to selector
+    this.story = null;
+    this.gameState = null;
+    this.selectedEmailThread = null;
+    this.selectedIMConversation = null;
+    this.bundleAssets = null;
+
+    // Reinitialize
+    this.init();
   }
 
   // Create test story for development
