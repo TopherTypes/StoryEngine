@@ -44,6 +44,26 @@ const app = {
     State.saveStory(this.story);
   },
 
+  // Update a story field and save
+  updateStoryField(field, value) {
+    if (!this.story) return;
+
+    this.story[field] = value;
+    this.story.lastModified = new Date().toISOString();
+    this.saveStory();
+
+    // Update dependent UI elements if needed
+    if (field === 'loginRequired') {
+      Renderer.toggleLoginFields();
+    }
+    if (field === 'title') {
+      Renderer.updateHeader(this.story);
+    }
+    if (field === 'theme') {
+      // Theme will be applied on next load or page refresh
+    }
+  },
+
   // Auto-save periodically
   setupAutoSave() {
     setInterval(() => {
@@ -159,6 +179,18 @@ const app = {
   openConditionBuilder() {
     if (!this.selectedArtefactId) return;
     UI.openConditionBuilder();
+    // Populate condition field dropdowns after modal opens
+    setTimeout(() => {
+      const typeSelect = document.getElementById('condition-type');
+      if (typeSelect) {
+        const type = typeSelect.value;
+        if (type === 'opened' || type === 'read') {
+          UI.populateArtefactDropdown();
+        } else if (type === 'app') {
+          UI.populateFolderDropdown();
+        }
+      }
+    }, 50);
   },
 
   closeConditionModal() {
@@ -175,32 +207,59 @@ const app = {
     const type = document.getElementById('condition-type')?.value;
     const andLogic = document.getElementById('condition-and')?.checked;
 
-    // Create trigger object based on type
-    const trigger = {
-      type: type,
-      value: null
-    };
+    // Build trigger object based on condition type
+    let trigger = null;
 
     switch (type) {
       case 'time':
-        trigger.value = parseInt(document.getElementById('condition-time-value')?.value || 0);
+        trigger = {
+          type: 'time',
+          minutes: parseInt(document.getElementById('condition-time-value')?.value || 0)
+        };
         break;
       case 'opened':
+        trigger = {
+          type: 'artefact_opened',
+          artefactId: document.getElementById('condition-artefact-id')?.value
+        };
+        break;
       case 'read':
-        trigger.value = document.getElementById('condition-artefact-id')?.value;
+        trigger = {
+          type: 'artefact_read',
+          artefactId: document.getElementById('condition-artefact-id')?.value
+        };
         break;
       case 'password':
-        trigger.value = document.getElementById('condition-password-key')?.value;
+        trigger = {
+          type: 'password',
+          value: document.getElementById('condition-password-key')?.value
+        };
         break;
       case 'app':
-        trigger.value = document.getElementById('condition-app-id')?.value;
+        trigger = {
+          type: 'app_opened',
+          appName: document.getElementById('condition-app-id')?.value
+        };
         break;
     }
 
-    // Update artefact
+    if (!trigger) return;
+
+    // Update artefact with proper condition logic
     const artefact = this.story.artefacts.find(a => a.id === this.selectedArtefactId);
     if (artefact) {
-      artefact.releaseTriggers = [trigger];
+      // If AND logic is selected and there are existing triggers, wrap in condition_group
+      if (andLogic && artefact.releaseTriggers && artefact.releaseTriggers.length > 0) {
+        artefact.releaseTriggers = [{
+          type: 'condition_group',
+          operator: 'AND',
+          rules: [...artefact.releaseTriggers, trigger]
+        }];
+      } else {
+        // Otherwise just set the single trigger
+        artefact.releaseTriggers = [trigger];
+      }
+
       artefact.modified = new Date().toISOString();
       this.saveStory();
 
@@ -316,6 +375,47 @@ const app = {
   openPreview() {
     const playerUrl = '../player/index.html?story=' + encodeURIComponent(JSON.stringify(this.story));
     window.open(playerUrl, 'preview');
+  },
+
+  // Asset upload handlers
+  handleImageUpload(artefactId) {
+    const fileInput = document.getElementById('artefact-image-file');
+    if (!fileInput || !fileInput.files.length) {
+      UI.alert('Please select an image file first');
+      return;
+    }
+
+    const filename = fileInput.files[0].name;
+    const path = `assets/images/${filename}`;
+
+    this.updateCurrentArtefact('assetPath', path);
+
+    // Update path input for user verification
+    const pathInput = document.getElementById('artefact-asset');
+    if (pathInput) pathInput.value = path;
+
+    // Clear file input
+    fileInput.value = '';
+  },
+
+  handleAudioUpload(artefactId) {
+    const fileInput = document.getElementById('artefact-audio-file');
+    if (!fileInput || !fileInput.files.length) {
+      UI.alert('Please select an audio file first');
+      return;
+    }
+
+    const filename = fileInput.files[0].name;
+    const path = `assets/audio/${filename}`;
+
+    this.updateCurrentArtefact('assetPath', path);
+
+    // Update path input for user verification
+    const pathInput = document.getElementById('artefact-audio-asset');
+    if (pathInput) pathInput.value = path;
+
+    // Clear file input
+    fileInput.value = '';
   }
 };
 

@@ -246,6 +246,10 @@ const Renderer = {
             <input type="text" id="artefact-subject" value="${this.escapeHtml(artefact.subject)}" onchange="app.updateCurrentArtefact('subject', this.value)">
           </div>
           <div class="form-group">
+            <label>Recipients (comma-separated emails)</label>
+            <input type="text" id="artefact-recipients" value="${artefact.recipients?.join(', ') || ''}" placeholder="e.g., player@test.com, other@test.com" onchange="app.updateCurrentArtefact('recipients', this.value.split(',').map(e => e.trim()).filter(e => e))">
+          </div>
+          <div class="form-group">
             <label>Body</label>
             <textarea id="artefact-body" onchange="app.updateCurrentArtefact('body', this.value)">${this.escapeHtml(artefact.body)}</textarea>
           </div>
@@ -289,6 +293,10 @@ const Renderer = {
             <label>Description</label>
             <textarea id="artefact-cal-desc" onchange="app.updateCurrentArtefact('description', this.value)">${this.escapeHtml(artefact.description)}</textarea>
           </div>
+          <div class="form-group">
+            <label>Attendees (comma-separated names)</label>
+            <input type="text" id="artefact-attendees" value="${artefact.attendees?.join(', ') || ''}" placeholder="e.g., Alice, Bob, Charlie" onchange="app.updateCurrentArtefact('attendees', this.value.split(',').map(a => a.trim()).filter(a => a))">
+          </div>
         `;
         break;
 
@@ -312,21 +320,42 @@ const Renderer = {
       case 'image':
         html = `
           <div class="form-group">
+            <label>Image File</label>
+            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+              <input type="file" id="artefact-image-file" accept="image/*" style="flex: 1;">
+              <button type="button" class="secondary" onclick="app.handleImageUpload('${artefactId}')" style="white-space: nowrap;">Set Path</button>
+            </div>
+            <p style="font-size: 11px; color: var(--text-secondary); margin: 0 0 8px 0;">
+              Select an image file, then click "Set Path" to update the path field.
+            </p>
+          </div>
+          <div class="form-group">
             <label>Asset Path</label>
-            <input type="text" id="artefact-asset" value="${artefact.assetPath}" onchange="app.updateCurrentArtefact('assetPath', this.value)" placeholder="e.g., assets/image.jpg">
+            <input type="text" id="artefact-asset" value="${artefact.assetPath}" onchange="app.updateCurrentArtefact('assetPath', this.value)" placeholder="e.g., assets/images/photo.jpg">
           </div>
           <div class="form-group">
             <label>Caption</label>
             <input type="text" id="artefact-caption" value="${artefact.caption}" onchange="app.updateCurrentArtefact('caption', this.value)">
           </div>
+          ${artefact.assetPath ? `<div style="margin-top: 12px; border: 1px solid var(--border-color); padding: 8px; background: var(--bg-secondary); border-radius: 4px;"><img src="${artefact.assetPath}" style="max-width: 100%; max-height: 200px; border-radius: 2px;" alt="Preview"></div>` : ''}
         `;
         break;
 
       case 'audio':
         html = `
           <div class="form-group">
+            <label>Audio File</label>
+            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+              <input type="file" id="artefact-audio-file" accept="audio/*" style="flex: 1;">
+              <button type="button" class="secondary" onclick="app.handleAudioUpload('${artefactId}')" style="white-space: nowrap;">Set Path</button>
+            </div>
+            <p style="font-size: 11px; color: var(--text-secondary); margin: 0 0 8px 0;">
+              Select an audio file, then click "Set Path" to update the path field.
+            </p>
+          </div>
+          <div class="form-group">
             <label>Asset Path</label>
-            <input type="text" id="artefact-audio-asset" value="${artefact.assetPath}" onchange="app.updateCurrentArtefact('assetPath', this.value)" placeholder="e.g., assets/audio.mp3">
+            <input type="text" id="artefact-audio-asset" value="${artefact.assetPath}" onchange="app.updateCurrentArtefact('assetPath', this.value)" placeholder="e.g., assets/audio/track.mp3">
           </div>
           <div class="form-group">
             <label>Description</label>
