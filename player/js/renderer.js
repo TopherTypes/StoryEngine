@@ -23,6 +23,7 @@ class Renderer {
 
   // Show desktop
   showDesktop(gameState) {
+    document.getElementById('loadingScreen').style.display = 'none';
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('desktopScreen').style.display = 'flex';
 
