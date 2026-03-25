@@ -23,37 +23,37 @@
 
 .loading-container h1 {
   margin-bottom: 1rem;
-  color: var(--terminal-green, #00ff00);
+  color: var(--color-accent-primary, #f76707);
 }
 
 .loading-container p {
-  color: var(--terminal-amber, #ffaa00);
+  color: var(--color-text-secondary, #b0b0b0);
 }
 
 /* Login Screen */
 #loginScreen {
-  background: linear-gradient(135deg, var(--bg-primary, #000) 0%, #1a1a1a 100%);
+  background: var(--color-bg-primary, #0f0f0f);
   flex-direction: column;
 }
 
 .login-container {
-  background: rgba(0, 0, 0, 0.9);
-  border: 2px solid var(--terminal-green, #00ff00);
+  background: var(--color-surface, #1a1a1a);
+  border: 1px solid var(--color-border, #3a3a3a);
   padding: 2rem;
-  border-radius: 5px;
+  border-radius: var(--border-radius-lg, 8px);
   max-width: 400px;
   width: 90%;
-  box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+  box-shadow: var(--shadow-lg, 0 8px 32px rgba(0, 0, 0, 0.4));
 }
 
 .login-container h1 {
-  color: var(--terminal-green, #00ff00);
+  color: var(--color-accent-primary, #f76707);
   margin-bottom: 0.5rem;
   text-align: center;
 }
 
 .login-container p {
-  color: var(--text-secondary, #aaa);
+  color: var(--color-text-secondary, #b0b0b0);
   margin-bottom: 2rem;
   text-align: center;
 }
@@ -64,68 +64,89 @@
 
 .form-group label {
   display: block;
-  color: var(--terminal-green, #00ff00);
+  color: var(--color-text-secondary, #b0b0b0);
   margin-bottom: 0.5rem;
-  font-weight: bold;
+  font-weight: 600;
 }
 
 .form-group input {
   width: 100%;
-  padding: 0.5rem;
-  background: #111;
-  border: 1px solid var(--terminal-green, #00ff00);
-  color: var(--terminal-green, #00ff00);
-  font-family: 'Courier New', monospace;
+  padding: 10px 12px;
+  background: var(--color-bg-secondary, #1a1a1a);
+  border: 1px solid var(--color-border, #3a3a3a);
+  color: var(--color-text-primary, #e8e8e8);
+  font-family: var(--font-family-base, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+  border-radius: var(--border-radius-md, 6px);
 }
 
 .form-group input:focus {
   outline: none;
-  box-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+  border-color: var(--color-accent-primary, #f76707);
+  box-shadow: 0 0 0 3px rgba(247, 103, 7, 0.1);
 }
 
 .btn-primary {
   width: 100%;
-  padding: 0.75rem;
-  background: var(--terminal-green, #00ff00);
-  color: #000;
+  padding: 10px 16px;
+  background: var(--color-accent-primary, #f76707);
+  color: white;
   border: none;
-  font-weight: bold;
+  font-weight: 600;
   cursor: pointer;
-  font-family: 'Courier New', monospace;
-  border-radius: 3px;
+  font-family: var(--font-family-base, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+  border-radius: var(--border-radius-md, 6px);
   margin-top: 1rem;
+  transition: all 0.2s ease;
 }
 
 .btn-primary:hover {
-  background: var(--accent-blue, #00aaff);
-  color: #000;
+  background: var(--color-accent-primary-hover, #ff8c3a);
+  box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.15));
 }
 
 .btn-secondary {
-  padding: 0.75rem 1.5rem;
-  background: transparent;
-  color: var(--terminal-green, #00ff00);
-  border: 1px solid var(--terminal-green, #00ff00);
+  padding: 10px 16px;
+  background: var(--color-surface-alt, #2a2a2a);
+  color: var(--color-text-primary, #e8e8e8);
+  border: 1px solid var(--color-border, #3a3a3a);
   cursor: pointer;
-  font-family: 'Courier New', monospace;
-  border-radius: 3px;
+  font-family: var(--font-family-base, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+  border-radius: var(--border-radius-md, 6px);
   margin: 0.5rem;
+  transition: all 0.2s ease;
 }
 
 .btn-secondary:hover {
-  background: var(--terminal-green, #00ff00);
-  color: #000;
+  background: var(--color-accent-primary, #f76707);
+  color: white;
+  border-color: var(--color-accent-primary, #f76707);
 }
 
 .error {
-  color: #ff0000;
+  color: var(--color-accent-error, #e74c3c);
   margin-top: 1rem;
   text-align: center;
 }
 
+.unread-badge {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: var(--color-accent-error, #e74c3c);
+  color: white;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+}
+
 /* Desktop Environment */
 #desktopScreen {
-  background: var(--bg-primary, #000);
+  background: var(--color-bg-primary, #0f0f0f);
   z-index: 99;
 }
 
@@ -145,52 +166,58 @@
 
 /* Taskbar */
 .taskbar {
-  background: #222;
-  border-top: 2px solid var(--terminal-green, #00ff00);
-  padding: 0.5rem;
+  background: var(--color-surface, #1a1a1a);
+  border-top: 1px solid var(--color-border, #3a3a3a);
+  padding: 8px 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 50px;
+  height: 56px;
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.12));
 }
 
 .taskbar-icons {
   display: flex;
-  gap: 0.5rem;
+  gap: 8px;
 }
 
 .taskbar-btn {
-  width: 40px;
-  height: 40px;
-  background: #333;
-  border: 1px solid var(--terminal-green, #00ff00);
-  color: var(--terminal-green, #00ff00);
+  width: 44px;
+  height: 44px;
+  background: var(--color-surface-alt, #2a2a2a);
+  border: 1px solid var(--color-border, #3a3a3a);
+  color: var(--color-text-secondary, #b0b0b0);
   cursor: pointer;
-  font-size: 1.2rem;
-  border-radius: 3px;
+  font-size: 18px;
+  border-radius: var(--border-radius-md, 6px);
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .taskbar-btn:hover {
-  background: var(--terminal-green, #00ff00);
-  color: #000;
+  background: var(--color-accent-primary, #f76707);
+  color: white;
+  border-color: var(--color-accent-primary, #f76707);
 }
 
 .taskbar-time {
-  color: var(--terminal-green, #00ff00);
-  font-family: 'Courier New', monospace;
-  font-weight: bold;
+  color: var(--color-text-secondary, #b0b0b0);
+  font-family: var(--font-family-base, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+  font-weight: 500;
   flex: 1;
   text-align: center;
+  font-size: 14px;
 }
 
 /* Windows */
 .window {
   position: absolute;
-  background: #1a1a1a;
-  border: 2px solid var(--terminal-green, #00ff00);
-  border-radius: 3px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  background: var(--color-surface, #1a1a1a);
+  border: 1px solid var(--color-border, #3a3a3a);
+  border-radius: var(--border-radius-lg, 8px);
+  box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.15)), 0 2px 8px rgba(0, 0, 0, 0.2);
   min-width: 300px;
   min-height: 200px;
   display: flex;
@@ -202,8 +229,8 @@
 }
 
 .window.focused {
-  border-color: var(--accent-blue, #00aaff);
-  box-shadow: 0 0 15px rgba(0, 170, 255, 0.5);
+  border-color: var(--color-accent-primary, #f76707);
+  box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.15)), 0 0 0 2px var(--color-accent-primary, #f76707);
 }
 
 .window.minimized {
@@ -211,9 +238,9 @@
 }
 
 .window-header {
-  background: #333;
-  border-bottom: 1px solid var(--terminal-green, #00ff00);
-  padding: 0.5rem;
+  background: linear-gradient(to right, var(--color-surface-alt, #2a2a2a), var(--color-surface, #1a1a1a));
+  border-bottom: 1px solid var(--color-border, #3a3a3a);
+  padding: 12px 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -222,78 +249,84 @@
 }
 
 .window-title {
-  color: var(--terminal-green, #00ff00);
-  font-weight: bold;
-  font-family: 'Courier New', monospace;
+  color: var(--color-text-primary, #e8e8e8);
+  font-weight: 600;
+  font-family: var(--font-family-base, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
   flex: 1;
+  font-size: 14px;
 }
 
 .window-controls {
   display: flex;
-  gap: 0.25rem;
+  gap: 4px;
 }
 
 .window-btn {
-  width: 25px;
-  height: 25px;
+  width: 32px;
+  height: 32px;
   background: transparent;
-  border: 1px solid var(--terminal-green, #00ff00);
-  color: var(--terminal-green, #00ff00);
+  border: 1px solid var(--color-border, #3a3a3a);
+  color: var(--color-text-secondary, #b0b0b0);
   cursor: pointer;
-  font-weight: bold;
-  border-radius: 2px;
+  font-weight: 600;
+  border-radius: var(--border-radius-sm, 4px);
   transition: all 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .window-btn:hover {
-  background: var(--terminal-green, #00ff00);
-  color: #000;
+  background: var(--color-surface-alt, #2a2a2a);
+  border-color: var(--color-accent-primary, #f76707);
+  color: var(--color-accent-primary, #f76707);
 }
 
 .window-content {
   flex: 1;
-  padding: 1rem;
+  padding: 16px;
   overflow: auto;
-  color: var(--text-primary, #ccc);
-  font-family: 'Courier New', monospace;
-  font-size: 0.9rem;
+  color: var(--color-text-primary, #e8e8e8);
+  font-family: var(--font-family-base, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+  font-size: 14px;
 }
 
 /* Email Styles */
 .email-list {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 8px;
 }
 
 .email-thread-summary {
-  background: #222;
-  border: 1px solid var(--terminal-green, #00ff00);
-  padding: 0.5rem;
+  background: var(--color-bg-secondary, #1a1a1a);
+  border: 1px solid var(--color-border, #3a3a3a);
+  padding: 12px;
   cursor: pointer;
   transition: all 0.2s;
   position: relative;
+  border-radius: var(--border-radius-md, 6px);
 }
 
 .email-thread-summary:hover {
-  background: #333;
-  border-color: var(--accent-blue, #00aaff);
+  background: var(--color-surface-alt, #2a2a2a);
+  border-color: var(--color-accent-primary, #f76707);
 }
 
 .thread-sender {
-  color: var(--terminal-green, #00ff00);
-  font-weight: bold;
+  color: var(--color-accent-primary, #f76707);
+  font-weight: 600;
 }
 
 .thread-subject {
-  color: var(--text-primary, #ccc);
-  margin-top: 0.25rem;
+  color: var(--color-text-primary, #e8e8e8);
+  margin-top: 4px;
 }
 
 .thread-preview {
-  color: var(--text-secondary, #999);
-  font-size: 0.85rem;
-  margin-top: 0.25rem;
+  color: var(--color-text-tertiary, #808080);
+  font-size: 13px;
+  margin-top: 4px;
 }
 
 .unread-badge {
@@ -315,39 +348,40 @@
 .email-thread {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 12px;
 }
 
 .email-message {
-  background: #222;
-  border: 1px solid var(--terminal-green, #00ff00);
-  padding: 1rem;
+  background: var(--color-bg-secondary, #1a1a1a);
+  border: 1px solid var(--color-border, #3a3a3a);
+  padding: 12px;
+  border-radius: var(--border-radius-md, 6px);
 }
 
 .email-header {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 0.5rem;
+  margin-bottom: 8px;
 }
 
 .email-header strong {
-  color: var(--terminal-green, #00ff00);
+  color: var(--color-accent-primary, #f76707);
 }
 
 .email-time {
-  color: var(--text-secondary, #999);
-  font-size: 0.85rem;
+  color: var(--color-text-tertiary, #808080);
+  font-size: 13px;
 }
 
 .email-subject {
-  color: var(--accent-blue, #00aaff);
-  font-weight: bold;
-  margin-bottom: 0.5rem;
+  color: var(--color-accent-secondary, #00d4ff);
+  font-weight: 600;
+  margin-bottom: 8px;
 }
 
 .email-body {
-  color: var(--text-primary, #ccc);
-  line-height: 1.4;
+  color: var(--color-text-primary, #e8e8e8);
+  line-height: 1.5;
   white-space: pre-wrap;
   word-wrap: break-word;
 }
@@ -356,89 +390,92 @@
 .im-list {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 8px;
 }
 
 .im-conversation-summary {
-  background: #222;
-  border: 1px solid var(--terminal-green, #00ff00);
-  padding: 0.5rem;
+  background: var(--color-bg-secondary, #1a1a1a);
+  border: 1px solid var(--color-border, #3a3a3a);
+  padding: 12px;
   cursor: pointer;
   transition: all 0.2s;
   position: relative;
+  border-radius: var(--border-radius-md, 6px);
 }
 
 .im-conversation-summary:hover {
-  background: #333;
-  border-color: var(--accent-blue, #00aaff);
+  background: var(--color-surface-alt, #2a2a2a);
+  border-color: var(--color-accent-primary, #f76707);
 }
 
 .conv-name {
-  color: var(--terminal-green, #00ff00);
-  font-weight: bold;
+  color: var(--color-accent-primary, #f76707);
+  font-weight: 600;
 }
 
 .conv-preview {
-  color: var(--text-secondary, #999);
-  font-size: 0.85rem;
-  margin-top: 0.25rem;
+  color: var(--color-text-tertiary, #808080);
+  font-size: 13px;
+  margin-top: 4px;
 }
 
 .im-thread {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 8px;
 }
 
 .im-message {
-  background: #222;
-  border: 1px solid var(--terminal-green, #00ff00);
-  padding: 0.75rem;
+  background: var(--color-bg-secondary, #1a1a1a);
+  border: 1px solid var(--color-border, #3a3a3a);
+  padding: 12px;
+  border-radius: var(--border-radius-md, 6px);
 }
 
 .msg-sender {
-  color: var(--terminal-green, #00ff00);
-  font-weight: bold;
+  color: var(--color-accent-primary, #f76707);
+  font-weight: 600;
 }
 
 .msg-time {
-  color: var(--text-secondary, #999);
-  font-size: 0.8rem;
+  color: var(--color-text-tertiary, #808080);
+  font-size: 12px;
 }
 
 .msg-body {
-  color: var(--text-primary, #ccc);
-  margin-top: 0.25rem;
-  line-height: 1.4;
+  color: var(--color-text-primary, #e8e8e8);
+  margin-top: 4px;
+  line-height: 1.5;
   white-space: pre-wrap;
   word-wrap: break-word;
 }
 
 /* Ending Screen */
 #endingScreen {
-  background: linear-gradient(135deg, var(--bg-primary, #000) 0%, #1a1a1a 100%);
+  background: var(--color-bg-primary, #0f0f0f);
   flex-direction: column;
 }
 
 .ending-container {
-  background: rgba(0, 0, 0, 0.95);
-  border: 3px solid var(--terminal-green, #00ff00);
+  background: var(--color-surface, #1a1a1a);
+  border: 1px solid var(--color-border, #3a3a3a);
   padding: 3rem;
-  border-radius: 5px;
+  border-radius: var(--border-radius-lg, 8px);
   max-width: 600px;
   width: 90%;
   text-align: center;
-  box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+  box-shadow: var(--shadow-lg, 0 8px 32px rgba(0, 0, 0, 0.4));
 }
 
 .ending-container h1 {
-  color: var(--terminal-green, #00ff00);
+  color: var(--color-accent-primary, #f76707);
   margin-bottom: 1rem;
   font-size: 2rem;
+  font-weight: 600;
 }
 
 #endingBody {
-  color: var(--text-primary, #ccc);
+  color: var(--color-text-primary, #e8e8e8);
   margin: 1rem 0;
   line-height: 1.6;
   white-space: pre-wrap;
