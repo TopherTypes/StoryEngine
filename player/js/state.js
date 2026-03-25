@@ -54,6 +54,7 @@ class PlayerState {
       storyId,
       startTime: now,
       currentSessionTime: now,
+      currentFilePath: '/',
       unlockedArtefactIds: new Set(),
       openedArtefactIds: new Set(),
       readArtefactIds: new Set(),
@@ -165,6 +166,12 @@ class PlayerState {
   markAppVisited(appName) {
     if (!this.currentState) return;
     this.currentState.visitedApps.add(appName);
+  }
+
+  // Mark folder as visited
+  markFolderVisited(folderPath) {
+    if (!this.currentState) return;
+    this.currentState.visitedFolders.add(folderPath);
   }
 
   // Unlock password

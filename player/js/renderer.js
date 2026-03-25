@@ -63,6 +63,8 @@ class Renderer {
       window.playerApp.openEmailWindow();
     } else if (appName === 'im') {
       window.playerApp.openIMWindow();
+    } else if (appName === 'files') {
+      window.playerApp.openFileExplorerWindow();
     }
   }
 
@@ -356,6 +358,147 @@ class Renderer {
       const contentEl = window.element.querySelector('.window-content');
       contentEl.innerHTML = content;
     }
+  }
+
+  // Render file explorer
+  renderFileExplorer(currentPath, files, onNavigate, onOpenFile) {
+    let html = '<div class="file-explorer">';
+
+    // Breadcrumb navigation
+    html += '<div class="breadcrumb">';
+    const parts = currentPath.split('/').filter(p => p);
+
+    html += '<span class="breadcrumb-item" data-path="/">🏠 Root</span>';
+    let pathSoFar = '';
+    parts.forEach((part, idx) => {
+      pathSoFar += '/' + part;
+      html += `<span class="breadcrumb-separator">/</span>`;
+      html += `<span class="breadcrumb-item" data-path="${pathSoFar}">${part}</span>`;
+    });
+    html += '</div>';
+
+    // File list
+    html += '<div class="file-list">';
+    if (files.length === 0) {
+      html += '<div class="empty-folder">This folder is empty</div>';
+    } else {
+      files.forEach(file => {
+        const icon = file.type === 'image' ? '🖼️' : file.type === 'audio' ? '🎵' : '📄';
+        html += `
+          <div class="file-item" data-artefact-id="${file.id}">
+            <div class="file-icon">${icon}</div>
+            <div class="file-info">
+              <div class="file-name">${file.title}</div>
+              <div class="file-type">${file.type}</div>
+            </div>
+          </div>
+        `;
+      });
+    }
+    html += '</div>';
+    html += '</div>';
+
+    // Add event listeners after rendering
+    setTimeout(() => {
+      // Breadcrumb navigation
+      document.querySelectorAll('.breadcrumb-item').forEach(el => {
+        el.addEventListener('click', () => {
+          const path = el.getAttribute('data-path');
+          onNavigate(path);
+        });
+      });
+
+      // File items
+      document.querySelectorAll('.file-item').forEach(el => {
+        el.addEventListener('click', () => {
+          const artefactId = el.getAttribute('data-artefact-id');
+          onOpenFile(artefactId);
+        });
+        el.style.cursor = 'pointer';
+      });
+    }, 0);
+
+    return html;
+  }
+
+  // Render document viewer
+  renderDocumentViewer(document) {
+    let html = '<div class="document-viewer">';
+
+    html += `<div class="document-title">${document.title}</div>`;
+    html += '<div class="document-content">';
+
+    // Simple markdown rendering (replace common patterns)
+    let body = document.body || '';
+    body = body.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    body = body.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    body = body.replace(/\n/g, '<br>');
+    body = body.replace(/```(.*?)```/gs, '<pre><code>$1</code></pre>');
+
+    html += body;
+    html += '</div>';
+    html += '</div>';
+
+    return html;
+  }
+
+  // Render image viewer
+  renderImageViewer(image) {
+    let html = '<div class="image-viewer">';
+
+    html += `<div class="image-title">${image.title}</div>`;
+
+    html += '<div class="image-container">';
+    if (image.assetId) {
+      html += `<img src="${image.assetId}" alt="${image.title}" class="image-display">`;
+    } else {
+      html += '<div class="image-placeholder">Image not available</div>';
+    }
+    html += '</div>';
+
+    if (image.caption) {
+      html += `<div class="image-caption">${image.caption}</div>`;
+    }
+
+    html += '</div>';
+
+    // Add zoom controls after rendering
+    setTimeout(() => {
+      const img = document.querySelector('.image-display');
+      if (img) {
+        let scale = 1;
+        const container = document.querySelector('.image-container');
+
+        // Fit to window initially
+        img.style.maxWidth = '100%';
+        img.style.maxHeight = '400px';
+        img.style.objectFit = 'contain';
+      }
+    }, 0);
+
+    return html;
+  }
+
+  // Render audio player
+  renderAudioPlayer(audio) {
+    let html = '<div class="audio-player">';
+
+    html += `<div class="audio-title">${audio.title}</div>`;
+
+    html += '<div class="audio-controls">';
+    if (audio.assetId) {
+      html += `<audio controls style="width: 100%; margin: 20px 0;">
+        <source src="${audio.assetId}" type="audio/mpeg">
+        Your browser does not support the audio element.
+      </audio>`;
+    } else {
+      html += '<div class="audio-placeholder">Audio file not available</div>';
+    }
+    html += '</div>';
+
+    html += '</div>';
+
+    return html;
   }
 }
 

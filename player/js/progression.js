@@ -111,8 +111,10 @@ class ProgressionEngine {
   // Get all available artefacts of a type
   getAvailableArtefacts(type) {
     const elapsedMinutes = this.gameState.getElapsedMinutes();
+    const types = Array.isArray(type) ? type : [type];
+
     return this.story.artefacts.filter(a => {
-      if (a.type !== type) return false;
+      if (!types.includes(a.type)) return false;
       return this.isArtefactUnlocked(a, elapsedMinutes);
     });
   }

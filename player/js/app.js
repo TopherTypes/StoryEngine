@@ -246,6 +246,116 @@ class PlayerApp {
     }
   }
 
+  openFileExplorerWindow() {
+    // Mark file explorer app as visited
+    this.gameState.markAppVisited('files');
+
+    // Get current folder path (default to root)
+    const currentPath = this.gameState.currentFilePath || '/';
+
+    // Get available files for current folder
+    const availableFiles = this.getFilesInFolder(currentPath);
+
+    // Show file explorer
+    const content = this.renderer.renderFileExplorer(
+      currentPath,
+      availableFiles,
+      (path) => this.navigateToFolder(path),
+      (artefactId) => this.openFileContent(artefactId)
+    );
+
+    const windowId = this.renderer.createWindow('📁 Files', 'files', content);
+
+    // Store window ID in game state for updates
+    this.fileExplorerWindowId = windowId;
+  }
+
+  navigateToFolder(path) {
+    // Update current path in game state
+    if (!this.gameState.currentFilePath) {
+      this.gameState.currentFilePath = '/';
+    }
+    this.gameState.currentFilePath = path;
+    this.gameState.markFolderVisited(path);
+
+    // Get available files for new folder
+    const availableFiles = this.getFilesInFolder(path);
+
+    // Update window content
+    const content = this.renderer.renderFileExplorer(
+      path,
+      availableFiles,
+      (newPath) => this.navigateToFolder(newPath),
+      (artefactId) => this.openFileContent(artefactId)
+    );
+
+    const windowEl = document.querySelector('.window.focused');
+    if (windowEl) {
+      const windowId = windowEl.id.replace('window-', '');
+      this.renderer.updateWindowContent(windowId, content);
+    }
+  }
+
+  getFilesInFolder(folderPath) {
+    const availableArtefacts = progressionEngine.getAvailableArtefacts(['document', 'image', 'audio']);
+
+    // Filter to files in this folder
+    const filesInFolder = availableArtefacts.filter(artefact => {
+      const artPath = artefact.folderPath || '/';
+      return artPath === folderPath;
+    });
+
+    return filesInFolder;
+  }
+
+  openFileContent(artefactId) {
+    const artefact = this.story.artefacts.find(a => a.id === artefactId);
+    if (!artefact) return;
+
+    // Mark as opened
+    this.gameState.markArtefactOpened(artefactId);
+
+    // Route to appropriate viewer based on type
+    if (artefact.type === 'document') {
+      this.openDocumentWindow(artefact);
+    } else if (artefact.type === 'image') {
+      this.openImageWindow(artefact);
+    } else if (artefact.type === 'audio') {
+      this.openAudioWindow(artefact);
+    }
+  }
+
+  openDocumentWindow(document) {
+    const content = this.renderer.renderDocumentViewer(document);
+    const windowId = this.renderer.createWindow(`📄 ${document.title}`, 'document', content);
+
+    // Mark as read when closed
+    const closeBtn = document.querySelector(`#window-${windowId} .close-btn`);
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        this.gameState.markArtefactRead(document.id);
+      });
+    }
+  }
+
+  openImageWindow(image) {
+    const content = this.renderer.renderImageViewer(image);
+    const windowId = this.renderer.createWindow(`🖼️ ${image.title}`, 'image', content);
+
+    // Mark as read when closed
+    const closeBtn = document.querySelector(`#window-${windowId} .close-btn`);
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        this.gameState.markArtefactRead(image.id);
+      });
+    }
+  }
+
+  openAudioWindow(audio) {
+    const content = this.renderer.renderAudioPlayer(audio);
+    const windowId = this.renderer.createWindow(`🎵 ${audio.title}`, 'audio', content);
+  }
+
   triggerEnding() {
     clearInterval(this.updateInterval);
     const ending = this.story.ending;
@@ -333,6 +443,31 @@ class PlayerApp {
           body: 'Hello from IM!',
           displayOrder: 1,
           releaseAtTime: 2
+        },
+        {
+          id: 'doc-001',
+          type: 'document',
+          title: 'Test Document',
+          body: '# Welcome\n\nThis is a **test document** with *markdown* formatting.\n\nYou can read about the story here.',
+          folderPath: '/',
+          releaseAtTime: 0
+        },
+        {
+          id: 'img-001',
+          type: 'image',
+          title: 'Test Image',
+          assetId: 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%2300ff00%22 width=%22200%22 height=%22200%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 font-size=%2224%22 fill=%22%23000%22 text-anchor=%22middle%22 dy=%22.3em%22%3ETest Image%3C/text%3E%3C/svg%3E',
+          caption: 'This is a test image',
+          folderPath: '/',
+          releaseAtTime: 0
+        },
+        {
+          id: 'audio-001',
+          type: 'audio',
+          title: 'Test Audio',
+          assetId: 'data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEAQB8AAAB9AAACABAAZGF0YQIAAAAAAA==',
+          folderPath: '/',
+          releaseAtTime: 0
         }
       ],
       emailSenders: [
