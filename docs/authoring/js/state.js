@@ -58,7 +58,12 @@ const State = {
 
     if (stored) {
       try {
-        return JSON.parse(stored);
+        const parsedStory = JSON.parse(stored);
+        // Merge with default story to fill in any missing properties (backward compatibility)
+        return {
+          ...this.getDefaultStory(),
+          ...parsedStory
+        };
       } catch (e) {
         console.error('Failed to parse stored story:', e);
         return this.getDefaultStory();
