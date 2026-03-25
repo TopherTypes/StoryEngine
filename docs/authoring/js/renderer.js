@@ -233,12 +233,20 @@ const Renderer = {
     switch (artefact.type) {
       case 'email':
         const senders = story.emailSenders;
+        const threads = story.emailThreads;
         html = `
           <div class="form-group">
             <label>From (Sender)</label>
             <select id="artefact-sender" onchange="app.updateCurrentArtefact('senderId', this.value)">
               <option value="">-- Select Sender --</option>
               ${senders.map(s => `<option value="${s.id}" ${s.id === artefact.senderId ? 'selected' : ''}>${this.escapeHtml(s.name)} (${s.email})</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Thread (Optional)</label>
+            <select id="artefact-thread" onchange="app.updateCurrentArtefact('threadId', this.value)">
+              <option value="">-- No Thread --</option>
+              ${threads.map(t => `<option value="${t.id}" ${t.id === artefact.threadId ? 'selected' : ''}>${this.escapeHtml(t.name)}</option>`).join('')}
             </select>
           </div>
           <div class="form-group">
@@ -258,12 +266,20 @@ const Renderer = {
 
       case 'message':
         const participants = story.imParticipants;
+        const conversations = story.imConversations;
         html = `
           <div class="form-group">
             <label>Participant</label>
             <select id="artefact-participant" onchange="app.updateCurrentArtefact('participantId', this.value)">
               <option value="">-- Select Participant --</option>
               ${participants.map(p => `<option value="${p.id}" ${p.id === artefact.participantId ? 'selected' : ''}>${this.escapeHtml(p.displayName)} (${p.username})</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Conversation (Optional)</label>
+            <select id="artefact-conversation" onchange="app.updateCurrentArtefact('conversationId', this.value)">
+              <option value="">-- No Conversation --</option>
+              ${conversations.map(c => `<option value="${c.id}" ${c.id === artefact.conversationId ? 'selected' : ''}>${this.escapeHtml(c.name)}</option>`).join('')}
             </select>
           </div>
           <div class="form-group">
@@ -396,11 +412,69 @@ const Renderer = {
     // Render senders
     this.renderEntityList(story.emailSenders, 'senders-list', (entity) => `${this.escapeHtml(entity.name)} <span style="color: var(--text-secondary);">(${entity.email})</span>`);
 
+    // Render threads
+    this.renderThreadsList(story);
+
     // Render participants
     this.renderEntityList(story.imParticipants, 'participants-list', (entity) => `${this.escapeHtml(entity.displayName)} <span style="color: var(--text-secondary);">@${entity.username}</span>`);
 
+    // Render conversations
+    this.renderConversationsList(story);
+
     // Render folders
     this.renderEntityList(story.folders, 'folders-list', (entity) => `📁 ${this.escapeHtml(entity.name)}`);
+  },
+
+  // Render email threads list with counts
+  renderThreadsList(story) {
+    const list = document.getElementById('threads-list');
+    if (!list) return;
+
+    if (story.emailThreads.length === 0) {
+      list.innerHTML = '<p style="color: var(--text-secondary); text-align: center; font-size: 11px; padding: 12px;">No threads yet. Add one above ↑</p>';
+      return;
+    }
+
+    list.innerHTML = story.emailThreads.map(thread => {
+      const count = story.artefacts.filter(a => a.type === 'email' && a.threadId === thread.id).length;
+      return `
+        <li class="entity-item">
+          <span>
+            <strong>${this.escapeHtml(thread.name)}</strong>
+            <span style="color: var(--text-secondary); font-size: 12px;"> (${count} email${count !== 1 ? 's' : ''})</span>
+          </span>
+          <div class="entity-actions">
+            <button onclick="app.deleteEntity('thread', '${thread.id}')" class="danger">×</button>
+          </div>
+        </li>
+      `;
+    }).join('');
+  },
+
+  // Render IM conversations list with counts
+  renderConversationsList(story) {
+    const list = document.getElementById('conversations-list');
+    if (!list) return;
+
+    if (story.imConversations.length === 0) {
+      list.innerHTML = '<p style="color: var(--text-secondary); text-align: center; font-size: 11px; padding: 12px;">No conversations yet. Add one above ↑</p>';
+      return;
+    }
+
+    list.innerHTML = story.imConversations.map(conversation => {
+      const count = story.artefacts.filter(a => a.type === 'message' && a.conversationId === conversation.id).length;
+      return `
+        <li class="entity-item">
+          <span>
+            <strong>${this.escapeHtml(conversation.name)}</strong>
+            <span style="color: var(--text-secondary); font-size: 12px;"> (${count} message${count !== 1 ? 's' : ''})</span>
+          </span>
+          <div class="entity-actions">
+            <button onclick="app.deleteEntity('conversation', '${conversation.id}')" class="danger">×</button>
+          </div>
+        </li>
+      `;
+    }).join('');
   },
 
   // Render a list of entities
