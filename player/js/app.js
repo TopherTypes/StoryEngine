@@ -15,37 +15,52 @@ class PlayerApp {
 
   async init() {
     try {
+      console.log('[StoryEngine] App initialization starting');
+
       // Initialize state management
+      console.log('[StoryEngine] Initializing player state...');
       await playerState.init();
+      console.log('[StoryEngine] Player state initialized successfully');
 
       // Load story from localStorage or URL parameter
+      console.log('[StoryEngine] Loading story...');
       await this.loadStory();
+      console.log('[StoryEngine] Story loaded:', this.story?.id);
 
       if (!this.story) {
+        console.error('[StoryEngine] No story available');
         this.showError('Failed to load story');
         return;
       }
 
       // Validate story data
+      console.log('[StoryEngine] Validating story data...');
       if (!this.validateStory(this.story)) {
+        console.error('[StoryEngine] Story validation failed');
         this.showError('Story data is invalid or corrupted');
         return;
       }
+      console.log('[StoryEngine] Story validation passed');
 
       // Check if saved game exists
+      console.log('[StoryEngine] Checking for saved game state...');
       const savedState = await playerState.getGameState(this.story.id);
+      console.log('[StoryEngine] Saved state retrieved:', savedState ? 'found' : 'not found');
 
       if (savedState) {
         // Resume saved game
+        console.log('[StoryEngine] Resuming saved game');
         playerState.currentState = savedState;
         this.gameState = playerState;
         this.continueGame();
       } else {
         // Show login screen for new game
+        console.log('[StoryEngine] Showing login screen for new game');
         this.renderer = new Renderer(this.story);
         this.renderer.showLoginScreen();
         this.setupLoginHandler();
       }
+      console.log('[StoryEngine] App initialization complete');
     } catch (e) {
       console.error('Failed to initialize app:', e);
       this.showError('Failed to initialize app: ' + e.message);
