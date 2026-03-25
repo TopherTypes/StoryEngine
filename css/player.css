@@ -291,6 +291,28 @@
   font-size: 14px;
 }
 
+.window-resize-handle {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+  background: linear-gradient(135deg, transparent 50%, var(--color-accent-primary, #f76707) 50%);
+  border-radius: 0 0 8px 0;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
+.window-resize-handle:hover {
+  opacity: 1;
+}
+
+.window.resizing {
+  border-color: var(--color-accent-primary, #f76707);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 0 0 2px #f76707;
+}
+
 /* Email Styles */
 .email-list {
   display: flex;

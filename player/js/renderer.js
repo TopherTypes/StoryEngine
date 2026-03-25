@@ -7,6 +7,7 @@ class Renderer {
     this.story = story;
     this.openWindows = new Map();
     this.focusedWindow = null;
+    this.isFullscreen = false;
   }
 
   // Show login screen
@@ -35,6 +36,9 @@ class Renderer {
 
     // Update time display
     this.updateTaskbarTime(gameState);
+
+    // Auto-fullscreen when desktop loads
+    setTimeout(() => this.enterFullscreen(), 100);
   }
 
   // Apply theme colors to the UI
@@ -111,6 +115,7 @@ class Renderer {
       <div class="window-content">
         ${content}
       </div>
+      <div class="window-resize-handle" data-window-id="${windowId}"></div>
     `;
 
     const container = document.getElementById('windowContainer');
@@ -120,6 +125,7 @@ class Renderer {
     windowEl.querySelector('.minimize-btn').addEventListener('click', () => this.minimizeWindow(windowId));
     windowEl.querySelector('.close-btn').addEventListener('click', () => this.closeWindow(windowId));
     windowEl.querySelector('.window-header').addEventListener('mousedown', (e) => this.startDragWindow(e, windowId));
+    windowEl.querySelector('.window-resize-handle').addEventListener('mousedown', (e) => this.startResizeWindow(e, windowId));
 
     // Make window focusable
     windowEl.addEventListener('click', () => this.focusWindow(windowId));
@@ -174,6 +180,7 @@ class Renderer {
   // Start dragging a window
   startDragWindow(e, windowId) {
     if (e.target.classList.contains('window-btn')) return;
+    if (e.target.classList.contains('window-resize-handle')) return;
 
     const window = this.openWindows.get(windowId);
     if (!window) return;
@@ -195,6 +202,56 @@ class Renderer {
 
     document.addEventListener('mousemove', moveHandler);
     document.addEventListener('mouseup', upHandler);
+  }
+
+  // Start resizing a window
+  startResizeWindow(e, windowId) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const window = this.openWindows.get(windowId);
+    if (!window) return;
+
+    const windowEl = window.element;
+    const rect = windowEl.getBoundingClientRect();
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const initialWidth = rect.width;
+    const initialHeight = rect.height;
+
+    windowEl.classList.add('resizing');
+
+    const moveHandler = (e) => {
+      const deltaX = e.clientX - startX;
+      const deltaY = e.clientY - startY;
+      const newWidth = Math.max(300, initialWidth + deltaX);
+      const newHeight = Math.max(200, initialHeight + deltaY);
+
+      windowEl.style.width = newWidth + 'px';
+      windowEl.style.height = newHeight + 'px';
+    };
+
+    const upHandler = () => {
+      document.removeEventListener('mousemove', moveHandler);
+      document.removeEventListener('mouseup', upHandler);
+      windowEl.classList.remove('resizing');
+    };
+
+    document.addEventListener('mousemove', moveHandler);
+    document.addEventListener('mouseup', upHandler);
+  }
+
+  // Update window dimensions
+  updateWindowDimensions(windowId, width, height) {
+    const window = this.openWindows.get(windowId);
+    if (window) {
+      // Clamp to minimum constraints
+      const constrainedWidth = Math.max(300, width);
+      const constrainedHeight = Math.max(200, height);
+
+      window.element.style.width = constrainedWidth + 'px';
+      window.element.style.height = constrainedHeight + 'px';
+    }
   }
 
   // Render email inbox
@@ -745,24 +802,41 @@ class Renderer {
     return html;
   }
 
-  // Toggle fullscreen mode
-  toggleFullscreen() {
+  // Enter fullscreen mode
+  enterFullscreen() {
     const desktopScreen = document.getElementById('desktopScreen');
-    if (!desktopScreen) return;
+    if (!desktopScreen || this.isFullscreen) return;
 
     // Try to use Fullscreen API first
-    if (!document.fullscreenElement) {
+    if (document.fullscreenEnabled) {
       desktopScreen.requestFullscreen?.().catch(() => {
         // Fallback to CSS-based fullscreen
         document.body.classList.add('fullscreen');
+        this.isFullscreen = true;
+      }).then(() => {
+        document.body.classList.add('fullscreen');
+        this.isFullscreen = true;
       });
     } else {
-      document.exitFullscreen?.();
-      document.body.classList.remove('fullscreen');
+      // Fallback to CSS-based fullscreen
+      document.body.classList.add('fullscreen');
+      this.isFullscreen = true;
     }
+  }
 
-    // Also toggle CSS fullscreen class
-    document.body.classList.toggle('fullscreen');
+  // Toggle fullscreen mode
+  toggleFullscreen() {
+    if (this.isFullscreen) {
+      // Exit fullscreen
+      if (document.fullscreenElement) {
+        document.exitFullscreen?.();
+      }
+      document.body.classList.remove('fullscreen');
+      this.isFullscreen = false;
+    } else {
+      // Enter fullscreen
+      this.enterFullscreen();
+    }
   }
 }
 
