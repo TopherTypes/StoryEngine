@@ -26,47 +26,100 @@ const Renderer = {
   updateDashboard(story) {
     const stats = State.calculateStats(story);
 
-    document.getElementById('dashboard-artefact-count').textContent = stats.totalArtefacts;
-    document.getElementById('dashboard-locked-count').textContent = stats.lockedCount;
-    document.getElementById('dashboard-conditional-count').textContent = stats.conditionalCount;
+    const dashboardArtefactEl = document.getElementById('dashboard-artefact-count');
+    if (dashboardArtefactEl) dashboardArtefactEl.textContent = stats.totalArtefacts;
 
-    document.getElementById('stat-emails').textContent = stats.typeBreakdown.email;
-    document.getElementById('stat-messages').textContent = stats.typeBreakdown.message;
-    document.getElementById('stat-calendar').textContent = stats.typeBreakdown.calendar;
-    document.getElementById('stat-documents').textContent = stats.typeBreakdown.document;
-    document.getElementById('stat-images').textContent = stats.typeBreakdown.image;
-    document.getElementById('stat-audio').textContent = stats.typeBreakdown.audio;
+    const dashboardLockedEl = document.getElementById('dashboard-locked-count');
+    if (dashboardLockedEl) dashboardLockedEl.textContent = stats.lockedCount;
+
+    const dashboardConditionalEl = document.getElementById('dashboard-conditional-count');
+    if (dashboardConditionalEl) dashboardConditionalEl.textContent = stats.conditionalCount;
+
+    const emailEl = document.getElementById('stat-emails');
+    if (emailEl) emailEl.textContent = stats.typeBreakdown.email;
+
+    const messageEl = document.getElementById('stat-messages');
+    if (messageEl) messageEl.textContent = stats.typeBreakdown.message;
+
+    const calendarEl = document.getElementById('stat-calendar');
+    if (calendarEl) calendarEl.textContent = stats.typeBreakdown.calendar;
+
+    const documentEl = document.getElementById('stat-documents');
+    if (documentEl) documentEl.textContent = stats.typeBreakdown.document;
+
+    const imageEl = document.getElementById('stat-images');
+    if (imageEl) imageEl.textContent = stats.typeBreakdown.image;
+
+    const audioEl = document.getElementById('stat-audio');
+    if (audioEl) audioEl.textContent = stats.typeBreakdown.audio;
 
     // Update form fields
-    document.getElementById('story-name').value = story.title;
-    document.getElementById('story-author').value = story.author;
-    document.getElementById('story-description').value = story.description;
-    document.getElementById('story-version').value = story.version;
+    const storyNameEl = document.getElementById('story-name');
+    if (storyNameEl) storyNameEl.value = story.title;
+
+    const storyAuthorEl = document.getElementById('story-author');
+    if (storyAuthorEl) storyAuthorEl.value = story.author;
+
+    const storyDescEl = document.getElementById('story-description');
+    if (storyDescEl) storyDescEl.value = story.description;
+
+    const storyVersionEl = document.getElementById('story-version');
+    if (storyVersionEl) storyVersionEl.value = story.version;
 
     // Update settings tab
-    document.getElementById('settings-story-name').value = story.title;
-    document.getElementById('settings-story-author').value = story.author;
-    document.getElementById('settings-story-description').value = story.description;
-    document.getElementById('settings-story-version').value = story.version;
-    document.getElementById('settings-story-tags').value = story.tags;
-    document.getElementById('settings-theme').value = story.theme;
-    document.getElementById('settings-wallpaper').value = story.wallpaper;
+    const settingsNameEl = document.getElementById('settings-story-name');
+    if (settingsNameEl) settingsNameEl.value = story.title;
+
+    const settingsAuthorEl = document.getElementById('settings-story-author');
+    if (settingsAuthorEl) settingsAuthorEl.value = story.author;
+
+    const settingsDescEl = document.getElementById('settings-story-description');
+    if (settingsDescEl) settingsDescEl.value = story.description;
+
+    const settingsVersionEl = document.getElementById('settings-story-version');
+    if (settingsVersionEl) settingsVersionEl.value = story.version;
+
+    const settingsTagsEl = document.getElementById('settings-story-tags');
+    if (settingsTagsEl) settingsTagsEl.value = story.tags;
+
+    const settingsThemeEl = document.getElementById('settings-theme');
+    if (settingsThemeEl) settingsThemeEl.value = story.theme;
+
+    const settingsWallpaperEl = document.getElementById('settings-wallpaper');
+    if (settingsWallpaperEl) settingsWallpaperEl.value = story.wallpaper;
 
     // Update login section
-    document.getElementById('settings-login-required').checked = story.loginRequired;
-    document.getElementById('settings-login-message').value = story.loginMessage;
-    document.getElementById('settings-login-username').value = story.loginUsername;
-    document.getElementById('settings-login-password').value = story.loginPassword;
+    const loginRequiredEl = document.getElementById('settings-login-required');
+    if (loginRequiredEl) loginRequiredEl.checked = story.loginRequired;
+
+    const loginMessageEl = document.getElementById('settings-login-message');
+    if (loginMessageEl) loginMessageEl.value = story.loginMessage;
+
+    const loginUsernameEl = document.getElementById('settings-login-username');
+    if (loginUsernameEl) loginUsernameEl.value = story.loginUsername;
+
+    const loginPasswordEl = document.getElementById('settings-login-password');
+    if (loginPasswordEl) loginPasswordEl.value = story.loginPassword;
 
     // Update ending section
-    document.getElementById('settings-ending-title').value = story.endingTitle;
-    document.getElementById('settings-ending-message').value = story.endingMessage;
-    document.getElementById('settings-ending-condition').value = story.endingCondition;
-    document.getElementById('settings-ending-value').value = story.endingValue;
+    const endingTitleEl = document.getElementById('settings-ending-title');
+    if (endingTitleEl) endingTitleEl.value = story.endingTitle;
+
+    const endingMessageEl = document.getElementById('settings-ending-message');
+    if (endingMessageEl) endingMessageEl.value = story.endingMessage;
+
+    const endingConditionEl = document.getElementById('settings-ending-condition');
+    if (endingConditionEl) endingConditionEl.value = story.endingCondition;
+
+    const endingValueEl = document.getElementById('settings-ending-value');
+    if (endingValueEl) endingValueEl.value = story.endingValue;
 
     // Update world builder
-    document.getElementById('calendar-owner').value = story.calendarOwner;
-    document.getElementById('calendar-start-date').value = story.calendarStartDate;
+    const calendarOwnerEl = document.getElementById('calendar-owner');
+    if (calendarOwnerEl) calendarOwnerEl.value = story.calendarOwner;
+
+    const calendarStartEl = document.getElementById('calendar-start-date');
+    if (calendarStartEl) calendarStartEl.value = story.calendarStartDate;
   },
 
   // Render filtered artefact list (used by search/filter feature)

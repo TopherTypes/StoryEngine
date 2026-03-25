@@ -330,6 +330,84 @@ const UI = {
     URL.revokeObjectURL(url);
   },
 
+  // Show spinner overlay
+  showSpinner(message = 'Loading...') {
+    // Remove existing spinner if any
+    const existing = document.getElementById('spinner-overlay');
+    if (existing) existing.remove();
+
+    // Create spinner element
+    const spinner = document.createElement('div');
+    spinner.id = 'spinner-overlay';
+    spinner.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+    `;
+
+    const spinnerContent = document.createElement('div');
+    spinnerContent.style.cssText = `
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      text-align: center;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    `;
+
+    const spinnerAnim = document.createElement('div');
+    spinnerAnim.style.cssText = `
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #3498db;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 15px;
+    `;
+
+    const messageText = document.createElement('p');
+    messageText.textContent = message;
+    messageText.style.cssText = `
+      margin: 0;
+      font-size: 14px;
+      color: #333;
+    `;
+
+    spinnerContent.appendChild(spinnerAnim);
+    spinnerContent.appendChild(messageText);
+    spinner.appendChild(spinnerContent);
+
+    // Add animation keyframes if not already present
+    if (!document.getElementById('spinner-animation')) {
+      const style = document.createElement('style');
+      style.id = 'spinner-animation';
+      style.textContent = `
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    document.body.appendChild(spinner);
+  },
+
+  // Hide spinner overlay
+  hideSpinner() {
+    const spinner = document.getElementById('spinner-overlay');
+    if (spinner) {
+      spinner.remove();
+    }
+  },
+
   // Confirm dialog
   confirm(message) {
     return window.confirm(message);
