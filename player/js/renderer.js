@@ -65,6 +65,8 @@ class Renderer {
       window.playerApp.openIMWindow();
     } else if (appName === 'files') {
       window.playerApp.openFileExplorerWindow();
+    } else if (appName === 'calendar') {
+      window.playerApp.openCalendarWindow();
     }
   }
 
@@ -497,6 +499,135 @@ class Renderer {
     html += '</div>';
 
     html += '</div>';
+
+    return html;
+  }
+
+  // Render calendar view
+  renderCalendar(events, onSelectEvent) {
+    let html = '<div class="calendar-view">';
+
+    // Month header
+    const now = new Date();
+    const monthName = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    html += `<div class="calendar-header">${monthName}</div>`;
+
+    // Calendar grid
+    html += '<div class="calendar-grid">';
+
+    // Day headers
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    dayNames.forEach(day => {
+      html += `<div class="calendar-day-header">${day}</div>`;
+    });
+
+    // Days
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
+
+    // Empty cells for days before month starts
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      html += '<div class="calendar-day empty"></div>';
+    }
+
+    // Days of month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const dayEvents = events.filter(e => e.date === dateStr);
+
+      html += `<div class="calendar-day ${dayEvents.length > 0 ? 'has-events' : ''}">
+        <div class="calendar-day-number">${day}</div>`;
+
+      if (dayEvents.length > 0) {
+        dayEvents.forEach(event => {
+          html += `<div class="calendar-event-dot" data-event-id="${event.id}" title="${event.title}">•</div>`;
+        });
+      }
+
+      html += '</div>';
+    }
+
+    html += '</div>';
+
+    // Events list
+    if (events.length > 0) {
+      html += '<div class="events-list">';
+      html += '<div class="events-title">Events</div>';
+      events.forEach(event => {
+        html += `
+          <div class="event-item" data-event-id="${event.id}">
+            <div class="event-date">${event.date}</div>
+            <div class="event-title">${event.title}</div>
+            ${event.time ? `<div class="event-time">${event.time}</div>` : ''}
+          </div>
+        `;
+      });
+      html += '</div>';
+    } else {
+      html += '<div class="empty-calendar">No events available</div>';
+    }
+
+    html += '</div>';
+
+    // Add event listeners after rendering
+    setTimeout(() => {
+      document.querySelectorAll('[data-event-id]').forEach(el => {
+        el.addEventListener('click', () => {
+          const eventId = el.getAttribute('data-event-id');
+          onSelectEvent(eventId);
+        });
+        el.style.cursor = 'pointer';
+      });
+    }, 0);
+
+    return html;
+  }
+
+  // Render event details
+  renderEventDetails(event) {
+    let html = '<div class="event-details">';
+
+    html += `<div class="event-detail-title">${event.title}</div>`;
+
+    if (event.date) {
+      html += `<div class="event-detail-field"><strong>Date:</strong> ${event.date}</div>`;
+    }
+
+    if (event.time) {
+      html += `<div class="event-detail-field"><strong>Time:</strong> ${event.time}</div>`;
+    }
+
+    if (event.location) {
+      html += `<div class="event-detail-field"><strong>Location:</strong> ${event.location}</div>`;
+    }
+
+    if (event.description) {
+      html += `<div class="event-detail-field event-description">${event.description}</div>`;
+    }
+
+    html += '<button class="event-back-btn" style="margin-top: 1rem; padding: 0.5rem 1rem; background: var(--accent-primary); color: #000; border: none; border-radius: 4px; cursor: pointer;">← Back to Calendar</button>';
+
+    html += '</div>';
+
+    // Add back button handler
+    setTimeout(() => {
+      const backBtn = document.querySelector('.event-back-btn');
+      if (backBtn) {
+        backBtn.addEventListener('click', () => {
+          const events = window.playerApp.getAvailableCalendarEvents();
+          const content = window.playerApp.renderer.renderCalendar(events, (eventId) => {
+            window.playerApp.showEventDetails(eventId);
+          });
+          const windowEl = document.querySelector('.window.focused');
+          if (windowEl) {
+            const windowId = windowEl.id.replace('window-', '');
+            window.playerApp.renderer.updateWindowContent(windowId, content);
+          }
+        });
+      }
+    }, 0);
 
     return html;
   }

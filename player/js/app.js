@@ -356,6 +356,54 @@ class PlayerApp {
     const windowId = this.renderer.createWindow(`🎵 ${audio.title}`, 'audio', content);
   }
 
+  openCalendarWindow() {
+    // Mark calendar app as visited
+    this.gameState.markAppVisited('calendar');
+
+    // Get available calendar events
+    const availableEvents = this.getAvailableCalendarEvents();
+
+    // Show calendar
+    const content = this.renderer.renderCalendar(availableEvents, (eventId) => {
+      this.showEventDetails(eventId);
+    });
+
+    const windowId = this.renderer.createWindow('📅 Calendar', 'calendar', content);
+  }
+
+  getAvailableCalendarEvents() {
+    // Get calendar events from story
+    if (!this.story.calendarEvents) {
+      return [];
+    }
+
+    const elapsedMinutes = this.gameState.getElapsedMinutes();
+
+    // Filter based on release conditions
+    return this.story.calendarEvents.filter(event => {
+      if (!event.releaseConditions) return true;
+
+      // For now, simple time-based release
+      if (event.releaseConditions.releaseAtTime !== undefined) {
+        return elapsedMinutes >= event.releaseConditions.releaseAtTime;
+      }
+
+      return true;
+    });
+  }
+
+  showEventDetails(eventId) {
+    const event = this.story.calendarEvents.find(e => e.id === eventId);
+    if (!event) return;
+
+    const content = this.renderer.renderEventDetails(event);
+    const windowEl = document.querySelector('.window.focused');
+    if (windowEl) {
+      const windowId = windowEl.id.replace('window-', '');
+      this.renderer.updateWindowContent(windowId, content);
+    }
+  }
+
   triggerEnding() {
     clearInterval(this.updateInterval);
     const ending = this.story.ending;
@@ -485,7 +533,35 @@ class PlayerApp {
         }
       ],
       fileStructure: [],
-      calendarConfig: {}
+      calendarConfig: {},
+      calendarEvents: [
+        {
+          id: 'event-001',
+          title: 'Story Briefing',
+          date: new Date().toISOString().split('T')[0],
+          time: '10:00 AM',
+          location: 'Conference Room A',
+          description: 'Initial briefing about the story events.',
+          releaseConditions: { releaseAtTime: 0 }
+        },
+        {
+          id: 'event-002',
+          title: 'Investigation Update',
+          date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+          time: '2:00 PM',
+          description: 'New findings have been discovered.',
+          releaseConditions: { releaseAtTime: 30 }
+        },
+        {
+          id: 'event-003',
+          title: 'Final Conclusion',
+          date: new Date(Date.now() + 172800000).toISOString().split('T')[0],
+          time: '5:00 PM',
+          location: 'Main Office',
+          description: 'Meeting to discuss the final resolution.',
+          releaseConditions: { releaseAtTime: 60 }
+        }
+      ]
     };
   }
 }
