@@ -195,6 +195,18 @@ const Renderer = {
             </div>
           </div>
 
+          ${artefact.releaseTriggers && artefact.releaseTriggers.length > 0 ? `
+            <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 4px; padding: 12px; margin-bottom: 12px; font-size: 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                  <div style="color: var(--text-secondary); font-size: 11px; margin-bottom: 4px;">Release Conditions:</div>
+                  <div style="color: var(--text-primary); font-family: monospace; line-height: 1.5;">${this.formatConditionPreview(story, artefact.releaseTriggers[0])}</div>
+                </div>
+                <button class="secondary" style="white-space: nowrap; font-size: 12px; padding: 4px 8px;" onclick="app.openConditionBuilder()">Edit</button>
+              </div>
+            </div>
+          ` : ''}
+
           <div class="form-group">
             <label>
               <input type="checkbox" id="artefact-locked" ${artefact.locked ? 'checked' : ''} onchange="app.updateCurrentArtefact('locked', this.checked)">
@@ -510,6 +522,35 @@ const Renderer = {
     if (checkbox && fields) {
       fields.style.display = checkbox.checked ? 'block' : 'none';
     }
+  },
+
+  // Format a single condition for human readability
+  formatConditionPreview(story, trigger) {
+    if (!trigger) return 'No conditions set';
+
+    const format = (t) => {
+      switch (t.type) {
+        case 'time':
+          return `After ${t.minutes} minutes`;
+        case 'artefact_opened':
+          const openedArtefact = story.artefacts.find(a => a.id === t.artefactId);
+          return `After "${openedArtefact?.title || 'Unknown'}" is opened`;
+        case 'artefact_read':
+          const readArtefact = story.artefacts.find(a => a.id === t.artefactId);
+          return `After "${readArtefact?.title || 'Unknown'}" is read`;
+        case 'password':
+          return `When password "${t.value}" is unlocked`;
+        case 'app_opened':
+          return `After "${t.appName}" is opened`;
+        case 'condition_group':
+          const op = t.operator === 'AND' ? ' AND ' : ' OR ';
+          return t.rules?.map(format).join(op) || 'Complex condition';
+        default:
+          return 'Unknown condition type';
+      }
+    };
+
+    return format(trigger);
   },
 
   // Generate human-readable lock reason from artefact conditions
