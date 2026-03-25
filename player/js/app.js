@@ -286,8 +286,11 @@ class PlayerApp {
       this.gameState.markArtefactRead(email.id);
     });
 
+    // Resolve attachment assets for all emails
+    const resolvedEmails = threadEmails.map(email => this._resolveArtefactAttachments(email));
+
     // Show thread view
-    const content = this.renderer.renderEmailThread(threadId, threadEmails);
+    const content = this.renderer.renderEmailThread(threadId, resolvedEmails);
     const windowEl = document.querySelector('.window.focused');
     if (windowEl) {
       const windowId = windowEl.id.replace('window-', '');
@@ -329,8 +332,11 @@ class PlayerApp {
       this.gameState.markArtefactRead(msg.id);
     });
 
+    // Resolve attachment assets for all messages
+    const resolvedMessages = convMessages.map(msg => this._resolveArtefactAttachments(msg));
+
     // Show thread view
-    const content = this.renderer.renderIMThread(conversationId, convMessages);
+    const content = this.renderer.renderIMThread(conversationId, resolvedMessages);
     const windowEl = document.querySelector('.window.focused');
     if (windowEl) {
       const windowId = windowEl.id.replace('window-', '');
@@ -499,6 +505,28 @@ class PlayerApp {
       const blob = new Blob([asset.data], { type: asset.mimeType });
       processed.assetId = URL.createObjectURL(blob);
     }
+
+    return processed;
+  }
+
+  // Helper to resolve attachment assets in emails and IM messages
+  _resolveArtefactAttachments(artefact) {
+    if (!this.bundleAssets || !artefact.attachments || artefact.attachments.length === 0) {
+      return artefact;
+    }
+
+    const processed = { ...artefact };
+    processed.attachments = artefact.attachments.map(assetId => {
+      if (this.bundleAssets[assetId]) {
+        const asset = this.bundleAssets[assetId];
+        const blob = new Blob([asset.data], { type: asset.mimeType });
+        return {
+          assetId: URL.createObjectURL(blob),
+          mimeType: asset.mimeType
+        };
+      }
+      return { assetId, mimeType: 'application/octet-stream' };
+    });
 
     return processed;
   }
