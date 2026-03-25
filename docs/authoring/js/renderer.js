@@ -323,7 +323,7 @@ const Renderer = {
             <label>Image File</label>
             <div style="display: flex; gap: 8px; margin-bottom: 8px;">
               <input type="file" id="artefact-image-file" accept="image/*" style="flex: 1;">
-              <button type="button" class="secondary" onclick="app.handleImageUpload('${artefactId}')" style="white-space: nowrap;">Set Path</button>
+              <button type="button" class="secondary" onclick="app.handleImageUpload('${artefact.id}')" style="white-space: nowrap;">Set Path</button>
             </div>
             <p style="font-size: 11px; color: var(--text-secondary); margin: 0 0 8px 0;">
               Select an image file, then click "Set Path" to update the path field.
@@ -347,7 +347,7 @@ const Renderer = {
             <label>Audio File</label>
             <div style="display: flex; gap: 8px; margin-bottom: 8px;">
               <input type="file" id="artefact-audio-file" accept="audio/*" style="flex: 1;">
-              <button type="button" class="secondary" onclick="app.handleAudioUpload('${artefactId}')" style="white-space: nowrap;">Set Path</button>
+              <button type="button" class="secondary" onclick="app.handleAudioUpload('${artefact.id}')" style="white-space: nowrap;">Set Path</button>
             </div>
             <p style="font-size: 11px; color: var(--text-secondary); margin: 0 0 8px 0;">
               Select an audio file, then click "Set Path" to update the path field.
