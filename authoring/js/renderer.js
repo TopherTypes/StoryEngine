@@ -102,12 +102,14 @@ const Renderer = {
         audio: '🎵'
       }[artefact.type] || '📋';
 
+      const lockReason = this.getArtefactLockReason(story, artefact);
+      const lockBadge = lockReason ? `<span class="badge badge-warning" title="${this.escapeHtml(lockReason)}" style="margin-top: 4px; cursor: help;">🔒 ${lockReason.split(' + ').length > 1 ? 'Multi-locked' : 'Locked'}</span>` : '';
+
       li.innerHTML = `
         <div class="artefact-item-title">${typeEmoji} ${this.escapeHtml(artefact.title)}</div>
         <div class="artefact-item-meta">
           <div>T+${artefact.releaseAtTime}min</div>
-          ${artefact.locked ? '<span class="badge badge-warning" style="margin-top: 4px;">LOCKED</span>' : ''}
-          ${artefact.releaseTriggers && artefact.releaseTriggers.length > 0 ? '<span class="badge badge-info" style="margin-top: 4px;">GATED</span>' : ''}
+          ${lockBadge}
         </div>
       `;
 
@@ -396,15 +398,19 @@ const Renderer = {
       return;
     }
 
-    tbody.innerHTML = sorted.map(artefact => `
+    tbody.innerHTML = sorted.map(artefact => {
+      const lockReason = this.getArtefactLockReason(story, artefact);
+      const lockCell = lockReason ? `<span title="${this.escapeHtml(lockReason)}" style="cursor: help;">🔒 Locked</span>` : '-';
+      return `
       <tr onclick="app.selectArtefact('${artefact.id}')">
         <td class="timeline-time">T+${artefact.releaseAtTime}min</td>
         <td>${this.escapeHtml(artefact.title)}</td>
         <td>${artefact.type.toUpperCase()}</td>
-        <td class="timeline-locked">${artefact.locked ? '🔒 Locked' : '-'}</td>
+        <td class="timeline-locked">${lockCell}</td>
         <td class="timeline-gated">${artefact.releaseTriggers && artefact.releaseTriggers.length > 0 ? '⚙️ Yes' : '-'}</td>
       </tr>
-    `).join('');
+    `;
+    }).join('');
   },
 
   // Render world builder entities
@@ -504,6 +510,49 @@ const Renderer = {
     if (checkbox && fields) {
       fields.style.display = checkbox.checked ? 'block' : 'none';
     }
+  },
+
+  // Generate human-readable lock reason from artefact conditions
+  getArtefactLockReason(story, artefact) {
+    const reasons = [];
+
+    // Check password lock
+    if (artefact.locked) {
+      reasons.push('Password protected');
+    }
+
+    // Check release triggers
+    if (artefact.releaseTriggers && artefact.releaseTriggers.length > 0) {
+      const triggers = artefact.releaseTriggers;
+
+      const formatTrigger = (trigger) => {
+        switch (trigger.type) {
+          case 'time':
+            return `Until T+${trigger.minutes}min`;
+          case 'artefact_opened':
+            const openedArtefact = story.artefacts.find(a => a.id === trigger.artefactId);
+            return `Until "${openedArtefact?.title || 'Unknown'}" opened`;
+          case 'artefact_read':
+            const readArtefact = story.artefacts.find(a => a.id === trigger.artefactId);
+            return `Until "${readArtefact?.title || 'Unknown'}" read`;
+          case 'password':
+            return `Password: "${trigger.value}"`;
+          case 'app_opened':
+            return `Until "${trigger.appName}" opened`;
+          case 'condition_group':
+            const operator = trigger.operator === 'AND' ? ' AND ' : ' OR ';
+            return trigger.rules?.map(formatTrigger).join(operator) || 'Complex condition';
+          default:
+            return 'Unknown condition';
+        }
+      };
+
+      triggers.forEach(trigger => {
+        reasons.push(formatTrigger(trigger));
+      });
+    }
+
+    return reasons.length > 0 ? reasons.join(' + ') : null;
   },
 
   // Escape HTML to prevent XSS
