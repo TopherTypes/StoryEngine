@@ -499,6 +499,12 @@ class PlayerApp {
   }
 
   showError(message) {
+    // Hide loading screen so error is visible
+    const loadingScreen = document.getElementById('loadingScreen');
+    if (loadingScreen) {
+      loadingScreen.style.display = 'none';
+    }
+
     const errorContainer = document.createElement('div');
     errorContainer.style.cssText = `
       position: fixed;
@@ -517,27 +523,31 @@ class PlayerApp {
       <p>${message}</p>
     `;
     document.body.appendChild(errorContainer);
+    console.error('App Error:', message);
   }
 
   // Create test story for development
   createTestStory() {
     return {
       id: 'test-story',
-      title: 'Test Story',
-      description: 'A test story for the player app',
-      author: 'Test Author',
+      title: 'Test Story - Complete Artifact Suite',
+      description: 'A comprehensive test story demonstrating all artifact types for functionality testing',
+      author: 'StoryEngine Test',
       version: '1.0.0',
       theme: {
         primaryColor: '#00ff00',
+        accentColor: '#00aa00',
+        backgroundColor: '#001a00',
         textColor: '#00ff00'
       },
       login: {
+        enabled: true,
         username: 'test',
         password: 'test'
       },
       ending: {
-        title: 'The End',
-        body: 'You have completed the story!',
+        title: 'Test Complete!',
+        body: 'You have successfully viewed all test artifacts and completed the story!',
         triggerConditions: [
           { type: 'artefact_read', artefactId: 'email-001' }
         ],
@@ -547,57 +557,77 @@ class PlayerApp {
         {
           id: 'email-001',
           type: 'email',
-          title: 'Test Email 1',
+          title: 'Welcome Email',
+          visibleTitle: 'Welcome Email',
           sender: 'sender-001',
           recipients: ['player@test.com'],
-          subject: 'Welcome',
-          body: 'This is a test email.',
+          subject: 'Welcome to the Story',
+          body: 'Hello! This is a test email artifact demonstrating the email functionality.',
           threadId: 'thread-001',
-          releaseAtTime: 0
+          releaseAtTime: 0,
+          locked: false,
+          tags: ['test', 'email']
         },
         {
           id: 'im-001',
           type: 'im',
-          title: 'Test Message 1',
+          title: 'Chat Message',
+          visibleTitle: 'Chat Message',
           conversationId: 'conv-001',
           senderId: 'participant-001',
-          body: 'Hello from IM!',
+          body: 'Hello from the test IM artifact! This demonstrates instant messaging functionality.',
           displayOrder: 1,
-          releaseAtTime: 2
+          releaseAtTime: 0,
+          locked: false,
+          tags: ['test', 'im']
         },
         {
           id: 'doc-001',
           type: 'document',
           title: 'Test Document',
-          body: '# Welcome\n\nThis is a **test document** with *markdown* formatting.\n\nYou can read about the story here.',
+          visibleTitle: 'Test Document',
+          body: '# Welcome to the Story\n\nThis is a **test document** artifact with *markdown* formatting.\n\n## Features Demonstrated\n- Markdown formatting\n- Multiple paragraphs\n- Proper document display\n\nYou can read about the story and its artifacts here.',
           folderPath: '/',
-          releaseAtTime: 0
+          releaseAtTime: 0,
+          locked: false,
+          tags: ['test', 'document']
         },
         {
           id: 'img-001',
           type: 'image',
           title: 'Test Image',
+          visibleTitle: 'Test Image',
           assetId: 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%2300ff00%22 width=%22200%22 height=%22200%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 font-size=%2224%22 fill=%22%23000%22 text-anchor=%22middle%22 dy=%22.3em%22%3ETest Image%3C/text%3E%3C/svg%3E',
-          caption: 'This is a test image',
+          caption: 'This is a test image artifact demonstrating image display functionality',
           folderPath: '/',
-          releaseAtTime: 0
+          releaseAtTime: 0,
+          locked: false,
+          tags: ['test', 'image']
         },
         {
           id: 'audio-001',
           type: 'audio',
           title: 'Test Audio',
+          visibleTitle: 'Test Audio',
           assetId: 'data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEAQB8AAAB9AAACABAAZGF0YQIAAAAAAA==',
           folderPath: '/',
-          releaseAtTime: 0
+          releaseAtTime: 0,
+          locked: false,
+          tags: ['test', 'audio']
         },
         {
-          id: 'doc-locked-001',
-          type: 'document',
-          title: 'Secret Document',
-          body: '# Confidential Information\n\nThis document contains **sensitive** information that requires a password to access.',
-          folderPath: '/',
-          password: 'secret123',
-          releaseAtTime: 0
+          id: 'calendar-001',
+          type: 'calendar',
+          title: 'Test Event',
+          visibleTitle: 'Test Event',
+          date: new Date().toISOString().split('T')[0],
+          time: '10:00 AM',
+          location: 'Conference Room',
+          description: 'This is a test calendar event artifact. It demonstrates the calendar functionality in the story engine.',
+          attendees: ['participant-001'],
+          releaseAtTime: 0,
+          locked: false,
+          tags: ['test', 'calendar']
         }
       ],
       emailSenders: [
@@ -615,7 +645,9 @@ class PlayerApp {
         }
       ],
       fileStructure: [],
-      calendarConfig: {},
+      calendarConfig: {
+        timezone: 'UTC'
+      },
       calendarEvents: [
         {
           id: 'event-001',
@@ -624,7 +656,7 @@ class PlayerApp {
           time: '10:00 AM',
           location: 'Conference Room A',
           description: 'Initial briefing about the story events.',
-          releaseConditions: { releaseAtTime: 0 }
+          releaseAtTime: 0
         },
         {
           id: 'event-002',
@@ -632,7 +664,7 @@ class PlayerApp {
           date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
           time: '2:00 PM',
           description: 'New findings have been discovered.',
-          releaseConditions: { releaseAtTime: 30 }
+          releaseAtTime: 30
         },
         {
           id: 'event-003',
@@ -641,7 +673,7 @@ class PlayerApp {
           time: '5:00 PM',
           location: 'Main Office',
           description: 'Meeting to discuss the final resolution.',
-          releaseConditions: { releaseAtTime: 60 }
+          releaseAtTime: 60
         }
       ]
     };
