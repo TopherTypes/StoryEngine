@@ -142,7 +142,6 @@ header h1 {
 
 /* Section Styling */
 section {
-  margin: 3rem 0;
 }
 
 .section-title {
@@ -318,7 +317,6 @@ footer {
   border-top: 1px solid var(--color-border);
   padding: 2rem;
   text-align: center;
-  margin-top: 4rem;
   color: var(--color-text-secondary);
   font-size: 0.9rem;
 }
