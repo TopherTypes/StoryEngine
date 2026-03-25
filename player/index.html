@@ -45,6 +45,70 @@
     </div>
   </div>
 
+  <!-- Story Selector Screen -->
+  <div id="selectorScreen" class="screen" style="display: none;">
+    <div class="selector-container">
+      <h1>⚙️ SELECT YOUR STORY ⚙️</h1>
+      <p class="tagline">&gt; Choose your adventure...</p>
+
+      <!-- Selector Tabs -->
+      <div class="selector-tabs">
+        <button class="tab-btn active" data-tab="recent">📚 Recent</button>
+        <button class="tab-btn" data-tab="upload">📂 Upload New</button>
+        <button class="tab-btn" data-tab="url">🔗 URL</button>
+        <button class="tab-btn" data-tab="demo">🎮 Demo</button>
+      </div>
+
+      <!-- Recent Stories Tab -->
+      <div id="recentTab" class="tab-content active">
+        <div id="recentStoriesList" class="stories-grid">
+          <!-- Generated story cards -->
+        </div>
+        <button id="clearHistoryBtn" class="btn-secondary" style="margin-top: 20px;">Clear History</button>
+      </div>
+
+      <!-- Upload New Tab -->
+      <div id="uploadTab" class="tab-content">
+        <input type="file" id="selectorFileInput" accept=".story,.json" style="display: none;">
+        <button id="selectorUploadBtn" class="btn-primary">📂 Choose File</button>
+        <p style="margin: 20px 0; color: #999;">or drag & drop below</p>
+        <div id="selectorDropZone" class="drop-zone">
+          Drop .story or .json file here
+        </div>
+      </div>
+
+      <!-- URL Tab -->
+      <div id="urlTab" class="tab-content">
+        <input type="text" id="selectorUrlInput" placeholder="https://example.com/story.json" class="url-input">
+        <button id="selectorLoadUrlBtn" class="btn-primary">Load from URL</button>
+      </div>
+
+      <!-- Demo Tab -->
+      <div id="demoTab" class="tab-content">
+        <div class="demo-card">
+          <h3>Test Story - Complete Artifact Suite</h3>
+          <p class="story-author">Author: StoryEngine Test</p>
+          <p class="story-meta">Version: 1.0.0</p>
+          <p style="margin-top: 15px; color: #aaa;">A sample story demonstrating all artifact types: emails, instant messages, documents, images, audio, and calendar events.</p>
+          <button id="selectorPlayDemoBtn" class="btn-primary" style="margin-top: 20px;">🎮 Play Demo</button>
+        </div>
+      </div>
+
+      <!-- Error Display -->
+      <p id="selectorError" class="error" style="display: none; margin-top: 20px;"></p>
+    </div>
+  </div>
+
+  <!-- Start Menu Overlay -->
+  <div id="startMenuOverlay" class="overlay" style="display: none;">
+    <div class="start-menu-popup">
+      <h2>Start Menu</h2>
+      <button id="startMenuContinueBtn" class="menu-btn">Continue Playing</button>
+      <button id="startMenuNewStoryBtn" class="menu-btn">Load New Story</button>
+      <button id="startMenuLogoutBtn" class="menu-btn logout">Log Out</button>
+    </div>
+  </div>
+
   <!-- Login Screen -->
   <div id="loginScreen" class="screen" style="display: none;">
     <div class="login-container">
@@ -75,6 +139,7 @@
       <!-- Taskbar -->
       <div id="taskbar" class="taskbar">
         <div class="taskbar-icons">
+          <button class="taskbar-btn" id="startMenuBtn" title="Start Menu">☰</button>
           <button class="taskbar-btn" data-app="email" title="Email">📧</button>
           <button class="taskbar-btn" data-app="im" title="Instant Messenger">💬</button>
           <button class="taskbar-btn" data-app="files" title="File Explorer">📁</button>
@@ -103,6 +168,7 @@
   <!-- Scripts -->
   <script src="../js/bundle.js"></script>
   <script src="js/utils.js"></script>
+  <script src="js/selector.js"></script>
   <script src="js/state.js"></script>
   <script src="js/progression.js"></script>
   <script src="js/renderer.js"></script>
