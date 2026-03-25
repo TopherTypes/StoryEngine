@@ -327,18 +327,27 @@
               </div>
               <div class="pane-content">
                 <div class="filter-controls">
-                  <select id="type-filter" onchange="app.filterArtefacts()">
+                  <input type="text" id="artefact-search" placeholder="Search artefacts..." onkeyup="app.filterArtefacts()" style="flex: 1; padding: 8px 12px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); border-radius: 4px;">
+                </div>
+                <div class="filter-controls" style="gap: 8px;">
+                  <select id="type-filter" onchange="app.filterArtefacts()" style="flex: 1;">
                     <option value="">All Types</option>
-                    <option value="email">Email</option>
-                    <option value="message">Message</option>
-                    <option value="calendar">Calendar</option>
-                    <option value="document">Document</option>
-                    <option value="image">Image</option>
-                    <option value="audio">Audio</option>
+                    <option value="email">📧 Email</option>
+                    <option value="message">💬 Message</option>
+                    <option value="calendar">📅 Calendar</option>
+                    <option value="document">📄 Document</option>
+                    <option value="image">🖼️ Image</option>
+                    <option value="audio">🎵 Audio</option>
+                  </select>
+                  <select id="status-filter" onchange="app.filterArtefacts()" style="flex: 1;">
+                    <option value="">All Status</option>
+                    <option value="unlocked">🔓 Unlocked</option>
+                    <option value="locked">🔒 Locked</option>
                   </select>
                 </div>
                 <div class="filter-controls">
                   <button onclick="app.createNewArtefact()" style="flex: 1;">+ New</button>
+                  <button onclick="app.clearArtefactFilters()" style="flex: 0.5; padding: 8px 8px; font-size: 12px;">Clear</button>
                 </div>
                 <ul class="artefact-list" id="artefact-list"></ul>
               </div>

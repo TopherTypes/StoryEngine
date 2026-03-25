@@ -69,6 +69,53 @@ const Renderer = {
     document.getElementById('calendar-start-date').value = story.calendarStartDate;
   },
 
+  // Render filtered artefact list (used by search/filter feature)
+  renderArtefactListFiltered(story, filtered) {
+    const artefactList = document.getElementById('artefact-list');
+    if (!artefactList) return;
+
+    artefactList.innerHTML = '';
+
+    // Sort by release time
+    const sorted = [...filtered].sort((a, b) => a.releaseAtTime - b.releaseAtTime);
+
+    if (sorted.length === 0) {
+      artefactList.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 20px; font-size: 11px;">No artefacts match the filters.</p>';
+      return;
+    }
+
+    sorted.forEach(artefact => {
+      const li = document.createElement('li');
+      li.className = 'artefact-item';
+      li.onclick = () => app.selectArtefact(artefact.id);
+      li.dataset.artefactId = artefact.id;
+
+      const typeEmoji = {
+        email: '📧',
+        message: '💬',
+        calendar: '📅',
+        document: '📄',
+        image: '🖼️',
+        audio: '🎵'
+      }[artefact.type] || '📋';
+
+      const lockReason = this.getArtefactLockReason(story, artefact);
+      const lockBadge = lockReason ? `<span class="badge badge-warning" title="${this.escapeHtml(lockReason)}" style="margin-top: 4px; cursor: help;">🔒 ${lockReason.split(' + ').length > 1 ? 'Multi-locked' : 'Locked'}</span>` : '';
+
+      li.innerHTML = `
+        <div class="artefact-item-title">${typeEmoji} ${this.escapeHtml(artefact.title)}</div>
+        <div class="artefact-item-meta">
+          <div>T+${artefact.releaseAtTime}min</div>
+          ${lockBadge}
+        </div>
+      `;
+
+      artefactList.appendChild(li);
+    });
+
+    document.getElementById('artefact-count').textContent = sorted.length;
+  },
+
   // Render artefact list
   renderArtefactList(story, filterType = null) {
     const artefactList = document.getElementById('artefact-list');
@@ -102,12 +149,14 @@ const Renderer = {
         audio: '🎵'
       }[artefact.type] || '📋';
 
+      const lockReason = this.getArtefactLockReason(story, artefact);
+      const lockBadge = lockReason ? `<span class="badge badge-warning" title="${this.escapeHtml(lockReason)}" style="margin-top: 4px; cursor: help;">🔒 ${lockReason.split(' + ').length > 1 ? 'Multi-locked' : 'Locked'}</span>` : '';
+
       li.innerHTML = `
         <div class="artefact-item-title">${typeEmoji} ${this.escapeHtml(artefact.title)}</div>
         <div class="artefact-item-meta">
           <div>T+${artefact.releaseAtTime}min</div>
-          ${artefact.locked ? '<span class="badge badge-warning" style="margin-top: 4px;">LOCKED</span>' : ''}
-          ${artefact.releaseTriggers && artefact.releaseTriggers.length > 0 ? '<span class="badge badge-info" style="margin-top: 4px;">GATED</span>' : ''}
+          ${lockBadge}
         </div>
       `;
 
@@ -192,6 +241,18 @@ const Renderer = {
               <button class="secondary" onclick="app.openConditionBuilder()">⚙️ Set Conditions</button>
             </div>
           </div>
+
+          ${artefact.releaseTriggers && artefact.releaseTriggers.length > 0 ? `
+            <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 4px; padding: 12px; margin-bottom: 12px; font-size: 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                  <div style="color: var(--text-secondary); font-size: 11px; margin-bottom: 4px;">Release Conditions:</div>
+                  <div style="color: var(--text-primary); font-family: monospace; line-height: 1.5;">${this.formatConditionPreview(story, artefact.releaseTriggers[0])}</div>
+                </div>
+                <button class="secondary" style="white-space: nowrap; font-size: 12px; padding: 4px 8px;" onclick="app.openConditionBuilder()">Edit</button>
+              </div>
+            </div>
+          ` : ''}
 
           <div class="form-group">
             <label>
@@ -396,15 +457,19 @@ const Renderer = {
       return;
     }
 
-    tbody.innerHTML = sorted.map(artefact => `
+    tbody.innerHTML = sorted.map(artefact => {
+      const lockReason = this.getArtefactLockReason(story, artefact);
+      const lockCell = lockReason ? `<span title="${this.escapeHtml(lockReason)}" style="cursor: help;">🔒 Locked</span>` : '-';
+      return `
       <tr onclick="app.selectArtefact('${artefact.id}')">
         <td class="timeline-time">T+${artefact.releaseAtTime}min</td>
         <td>${this.escapeHtml(artefact.title)}</td>
         <td>${artefact.type.toUpperCase()}</td>
-        <td class="timeline-locked">${artefact.locked ? '🔒 Locked' : '-'}</td>
+        <td class="timeline-locked">${lockCell}</td>
         <td class="timeline-gated">${artefact.releaseTriggers && artefact.releaseTriggers.length > 0 ? '⚙️ Yes' : '-'}</td>
       </tr>
-    `).join('');
+    `;
+    }).join('');
   },
 
   // Render world builder entities
@@ -504,6 +569,78 @@ const Renderer = {
     if (checkbox && fields) {
       fields.style.display = checkbox.checked ? 'block' : 'none';
     }
+  },
+
+  // Format a single condition for human readability
+  formatConditionPreview(story, trigger) {
+    if (!trigger) return 'No conditions set';
+
+    const format = (t) => {
+      switch (t.type) {
+        case 'time':
+          return `After ${t.minutes} minutes`;
+        case 'artefact_opened':
+          const openedArtefact = story.artefacts.find(a => a.id === t.artefactId);
+          return `After "${openedArtefact?.title || 'Unknown'}" is opened`;
+        case 'artefact_read':
+          const readArtefact = story.artefacts.find(a => a.id === t.artefactId);
+          return `After "${readArtefact?.title || 'Unknown'}" is read`;
+        case 'password':
+          return `When password "${t.value}" is unlocked`;
+        case 'app_opened':
+          return `After "${t.appName}" is opened`;
+        case 'condition_group':
+          const op = t.operator === 'AND' ? ' AND ' : ' OR ';
+          return t.rules?.map(format).join(op) || 'Complex condition';
+        default:
+          return 'Unknown condition type';
+      }
+    };
+
+    return format(trigger);
+  },
+
+  // Generate human-readable lock reason from artefact conditions
+  getArtefactLockReason(story, artefact) {
+    const reasons = [];
+
+    // Check password lock
+    if (artefact.locked) {
+      reasons.push('Password protected');
+    }
+
+    // Check release triggers
+    if (artefact.releaseTriggers && artefact.releaseTriggers.length > 0) {
+      const triggers = artefact.releaseTriggers;
+
+      const formatTrigger = (trigger) => {
+        switch (trigger.type) {
+          case 'time':
+            return `Until T+${trigger.minutes}min`;
+          case 'artefact_opened':
+            const openedArtefact = story.artefacts.find(a => a.id === trigger.artefactId);
+            return `Until "${openedArtefact?.title || 'Unknown'}" opened`;
+          case 'artefact_read':
+            const readArtefact = story.artefacts.find(a => a.id === trigger.artefactId);
+            return `Until "${readArtefact?.title || 'Unknown'}" read`;
+          case 'password':
+            return `Password: "${trigger.value}"`;
+          case 'app_opened':
+            return `Until "${trigger.appName}" opened`;
+          case 'condition_group':
+            const operator = trigger.operator === 'AND' ? ' AND ' : ' OR ';
+            return trigger.rules?.map(formatTrigger).join(operator) || 'Complex condition';
+          default:
+            return 'Unknown condition';
+        }
+      };
+
+      triggers.forEach(trigger => {
+        reasons.push(formatTrigger(trigger));
+      });
+    }
+
+    return reasons.length > 0 ? reasons.join(' + ') : null;
   },
 
   // Escape HTML to prevent XSS
