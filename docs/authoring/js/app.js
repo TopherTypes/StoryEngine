@@ -298,10 +298,39 @@ const app = {
       case 'participant':
         const username = document.getElementById('new-participant-name')?.value.trim();
         const display = document.getElementById('new-participant-display')?.value.trim();
+        const avatarInput = document.getElementById('new-participant-avatar');
+
         if (!username || !display) {
           UI.alert('Please fill in both username and display name');
           return;
         }
+
+        // Handle avatar file if provided
+        if (avatarInput?.files?.length > 0) {
+          const file = avatarInput.files[0];
+          const reader = new FileReader();
+
+          reader.onload = (e) => {
+            entity = {
+              id: State.generateId(),
+              type: 'participant',
+              username: username,
+              displayName: display,
+              profilePicture: e.target.result  // Base64 data URI
+            };
+            this.story.imParticipants.push(entity);
+            document.getElementById('new-participant-name').value = '';
+            document.getElementById('new-participant-display').value = '';
+            document.getElementById('new-participant-avatar').value = '';
+            document.getElementById('avatar-preview').innerHTML = '';
+            Renderer.renderWorldBuilder(this.story);
+          };
+
+          reader.readAsDataURL(file);
+          return;
+        }
+
+        // No avatar file
         entity = {
           id: State.generateId(),
           type: 'participant',
@@ -534,4 +563,20 @@ const app = {
 // Initialize app when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
   app.init();
+
+  // Set up avatar preview for participant image selection
+  const avatarInput = document.getElementById('new-participant-avatar');
+  if (avatarInput) {
+    avatarInput.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      const preview = document.getElementById('avatar-preview');
+      if (file && preview) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          preview.innerHTML = `<img src="${event.target.result}" style="width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 2px solid #ddd;">`;
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  }
 });

@@ -340,6 +340,28 @@ class Renderer {
     return html;
   }
 
+  // Helper: Generate avatar HTML for a participant
+  getAvatarHTML(participant) {
+    if (!participant) {
+      return '<div class="im-avatar im-avatar-initials">?</div>';
+    }
+
+    if (participant.profilePicture) {
+      return `<img src="${participant.profilePicture}" class="im-avatar">`;
+    }
+
+    // Generate initials fallback
+    const displayName = participant.displayName || participant.name || '?';
+    const initials = displayName
+      .split(' ')
+      .map(word => word[0])
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
+
+    return `<div class="im-avatar im-avatar-initials">${initials}</div>`;
+  }
+
   // Render IM conversations list
   renderIMConversations(messages, onSelectConversation) {
     let html = '<div class="im-list">';
@@ -357,10 +379,14 @@ class Renderer {
       const latest = msgs[msgs.length - 1];
       const participant = this.story.imParticipants.find(p => p.id === latest.senderId);
       const unreadCount = msgs.filter(m => !window.playerApp.gameState.currentState.readArtefactIds.has(m.id)).length;
+      const displayName = participant ? (participant.displayName || participant.name) : latest.senderId;
 
       html += `
         <div class="im-conversation-summary" data-conversation-id="${convId}">
-          <div class="conv-name">${participant ? participant.name : latest.senderId}</div>
+          <div class="conv-header">
+            ${this.getAvatarHTML(participant)}
+            <div class="conv-name">${displayName}</div>
+          </div>
           <div class="conv-preview">${latest.body.substring(0, 50)}...</div>
           ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
         </div>
@@ -391,10 +417,17 @@ class Renderer {
 
     sorted.forEach(msg => {
       const participant = this.story.imParticipants.find(p => p.id === msg.senderId);
+      const displayName = participant ? (participant.displayName || participant.name) : msg.senderId;
+
       html += `
         <div class="im-message" data-message-id="${msg.id}">
-          <div class="msg-sender">${participant ? participant.name : msg.senderId}</div>
-          <div class="msg-time">${msg.timestamp || ''}</div>
+          <div class="msg-header">
+            ${this.getAvatarHTML(participant)}
+            <div class="msg-sender-info">
+              <div class="msg-sender">${displayName}</div>
+              <div class="msg-time">${msg.timestamp || ''}</div>
+            </div>
+          </div>
           <div class="msg-body">${msg.body}</div>
       `;
 
