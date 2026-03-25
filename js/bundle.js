@@ -1,0 +1,410 @@
+/**
+ * StoryEngine Bundle Format Handler
+ * Handles creation and parsing of .story bundle files
+ */
+
+const StoryBundle = {
+  // Bundle format constants
+  MAGIC_NUMBER: 0x53544f5259, // "STORY" in hex
+  MAGIC_BYTES: [0x53, 0x54, 0x4F, 0x52, 0x59], // "STORY"
+  VERSION: 0x01,
+  COMPRESSION_GZIP: 0x01,
+  COMPRESSION_NONE: 0x00,
+  HEADER_SIZE: 16,
+
+  /**
+   * Create a story bundle from a story object and asset files
+   * @param {Object} story - The story object
+   * @param {Array<{assetId, file}>} assets - Asset files to include
+   * @returns {Promise<Blob>} - The bundle as a Blob
+   */
+  async createBundle(story, assets = []) {
+    try {
+      // Validate story
+      if (!story.id || !story.title) {
+        throw new Error('Story must have id and title');
+      }
+
+      // Create manifest
+      const manifest = {
+        bundleVersion: 1,
+        storyId: story.id,
+        storyTitle: story.title,
+        storyVersion: story.version,
+        createdAt: new Date().toISOString(),
+        assetHashes: {}
+      };
+
+      // Calculate asset hashes and prepare asset data
+      const assetBlocks = [];
+      const assetMap = {};
+
+      for (const asset of assets) {
+        if (!asset.file) continue;
+
+        const data = await this._fileToArrayBuffer(asset.file);
+        const hash = await this._calculateSHA256(data);
+        const mimeType = asset.file.type || 'application/octet-stream';
+
+        manifest.assetHashes[asset.assetId] = {
+          hash,
+          mimeType,
+          size: data.byteLength
+        };
+
+        assetBlocks.push({
+          assetId: asset.assetId,
+          mimeType,
+          data
+        });
+
+        assetMap[asset.assetId] = true;
+      }
+
+      // Update story with assetId references (convert from assetPath if needed)
+      const processedStory = this._normalizeStoryAssets(story, assetMap);
+
+      // Serialize story to JSON
+      const storyJson = JSON.stringify(processedStory, null, 2);
+      const storyBuffer = new TextEncoder().encode(storyJson);
+
+      // Build bundle content
+      const bundles = [];
+
+      // Add header
+      bundles.push(this._createHeader());
+
+      // Add manifest
+      const manifestJson = JSON.stringify(manifest, null, 2);
+      bundles.push(new TextEncoder().encode(manifestJson));
+      bundles.push(this._createSeparator('MANIFEST_END'));
+
+      // Add story
+      bundles.push(storyBuffer);
+      bundles.push(this._createSeparator('STORY_END'));
+
+      // Add assets
+      for (const asset of assetBlocks) {
+        bundles.push(this._createAssetBlock(asset.assetId, asset.mimeType, asset.data));
+      }
+
+      // Add footer with CRC
+      const contentBlob = new Blob(bundles);
+      const contentBuffer = await this._blobToArrayBuffer(contentBlob);
+      const crc32 = this._calculateCRC32(contentBuffer);
+
+      bundles.push(this._createFooter(crc32));
+
+      // Return final bundle
+      return new Blob(bundles, { type: 'application/x-story-bundle' });
+    } catch (error) {
+      console.error('Failed to create bundle:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Parse a story bundle and extract story + assets
+   * @param {Blob} bundleBlob - The .story bundle file
+   * @returns {Promise<{story, assets}>} - Extracted story and asset map
+   */
+  async parseBundle(bundleBlob) {
+    try {
+      const buffer = await this._blobToArrayBuffer(bundleBlob);
+      const view = new DataView(buffer);
+
+      // Verify magic number
+      if (!this._verifyMagic(view)) {
+        throw new Error('Invalid bundle format: incorrect magic number');
+      }
+
+      // Check version
+      const version = view.getUint8(5);
+      if (version !== this.VERSION) {
+        throw new Error(`Bundle format version ${version} not supported (expected ${this.VERSION})`);
+      }
+
+      // Check compression flag
+      const compressionFlag = view.getUint8(6);
+      if (compressionFlag !== this.COMPRESSION_NONE && compressionFlag !== this.COMPRESSION_GZIP) {
+        throw new Error('Unknown compression format');
+      }
+
+      // Parse sections
+      let offset = this.HEADER_SIZE;
+      const uint8Array = new Uint8Array(buffer);
+
+      // Read manifest
+      const manifestEnd = this._findSeparator(uint8Array, offset, 'MANIFEST_END');
+      if (manifestEnd === -1) {
+        throw new Error('Bundle corrupted: missing manifest end marker');
+      }
+
+      const manifestJson = new TextDecoder().decode(uint8Array.slice(offset, manifestEnd));
+      const manifest = JSON.parse(manifestJson);
+      offset = manifestEnd + 13; // Length of "MANIFEST_END\x00"
+
+      // Verify bundle integrity
+      const expectedCrc = this._readCRCFromEnd(uint8Array);
+      const contentCrc = this._calculateCRC32(uint8Array.slice(0, uint8Array.length - 4));
+      if (expectedCrc !== contentCrc) {
+        console.warn('Warning: Bundle CRC32 mismatch (file may be corrupted)');
+      }
+
+      // Read story
+      const storyEnd = this._findSeparator(uint8Array, offset, 'STORY_END');
+      if (storyEnd === -1) {
+        throw new Error('Bundle corrupted: missing story end marker');
+      }
+
+      const storyJson = new TextDecoder().decode(uint8Array.slice(offset, storyEnd));
+      const story = JSON.parse(storyJson);
+      offset = storyEnd + 10; // Length of "STORY_END\x00"
+
+      // Read assets
+      const assets = {};
+      while (offset < uint8Array.length - 4) { // -4 for CRC32
+        const assetBlock = this._readAssetBlock(uint8Array, offset);
+        if (!assetBlock) break;
+
+        assets[assetBlock.assetId] = {
+          mimeType: assetBlock.mimeType,
+          data: assetBlock.data
+        };
+
+        offset = assetBlock.nextOffset;
+      }
+
+      // Verify asset hashes if manifest present
+      if (manifest.assetHashes) {
+        for (const [assetId, hashInfo] of Object.entries(manifest.assetHashes)) {
+          if (assets[assetId]) {
+            const calculatedHash = await this._calculateSHA256(assets[assetId].data);
+            if (calculatedHash !== hashInfo.hash) {
+              throw new Error(`Asset ${assetId} is corrupted (hash mismatch)`);
+            }
+          }
+        }
+      }
+
+      return {
+        story,
+        assets,
+        metadata: manifest
+      };
+    } catch (error) {
+      console.error('Failed to parse bundle:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Convert asset from file to data URL for storage/display
+   * @param {Blob} file - The asset file
+   * @returns {Promise<string>} - Data URL
+   */
+  async fileToDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+  },
+
+  // Private helper methods
+
+  _createHeader() {
+    const header = new Uint8Array(this.HEADER_SIZE);
+    // Magic number
+    header[0] = 0x53; // S
+    header[1] = 0x54; // T
+    header[2] = 0x4F; // O
+    header[3] = 0x52; // R
+    header[4] = 0x59; // Y
+    // Version
+    header[5] = this.VERSION;
+    // Compression flag (no compression)
+    header[6] = this.COMPRESSION_NONE;
+    // Reserved (padding)
+    for (let i = 7; i < this.HEADER_SIZE; i++) {
+      header[i] = 0x00;
+    }
+    return header;
+  },
+
+  _createSeparator(name) {
+    const bytes = new TextEncoder().encode(name);
+    const separator = new Uint8Array(bytes.length + 1);
+    separator.set(bytes);
+    separator[bytes.length] = 0x00; // Null terminator
+    return separator;
+  },
+
+  _createAssetBlock(assetId, mimeType, data) {
+    const idBytes = new TextEncoder().encode(assetId);
+    const mimeBytes = new TextEncoder().encode(mimeType);
+
+    // Asset block: [id_length][id\0][mime_length][mime\0][size][data]
+    const block = new Uint8Array(
+      1 + idBytes.length + 1 +
+      1 + mimeBytes.length + 1 +
+      4 +
+      data.byteLength
+    );
+
+    let offset = 0;
+    block[offset++] = idBytes.length;
+    block.set(idBytes, offset);
+    offset += idBytes.length;
+    block[offset++] = 0x00;
+
+    block[offset++] = mimeBytes.length;
+    block.set(mimeBytes, offset);
+    offset += mimeBytes.length;
+    block[offset++] = 0x00;
+
+    const sizeView = new DataView(block.buffer, offset, 4);
+    sizeView.setUint32(0, data.byteLength, false);
+    offset += 4;
+
+    block.set(new Uint8Array(data), offset);
+
+    return block;
+  },
+
+  _readAssetBlock(uint8Array, offset) {
+    if (offset >= uint8Array.length - 4) return null;
+
+    try {
+      let pos = offset;
+
+      // Read asset ID
+      const idLength = uint8Array[pos++];
+      const idBytes = uint8Array.slice(pos, pos + idLength);
+      const assetId = new TextDecoder().decode(idBytes);
+      pos += idLength + 1; // +1 for null terminator
+
+      // Read MIME type
+      const mimeLength = uint8Array[pos++];
+      const mimeBytes = uint8Array.slice(pos, pos + mimeLength);
+      const mimeType = new TextDecoder().decode(mimeBytes);
+      pos += mimeLength + 1; // +1 for null terminator
+
+      // Read data size
+      const sizeView = new DataView(uint8Array.buffer, uint8Array.byteOffset + pos, 4);
+      const dataSize = sizeView.getUint32(0, false);
+      pos += 4;
+
+      // Read data
+      const data = uint8Array.slice(pos, pos + dataSize);
+      pos += dataSize;
+
+      return {
+        assetId,
+        mimeType,
+        data: data.buffer.slice(data.byteOffset, data.byteOffset + data.length),
+        nextOffset: pos
+      };
+    } catch (error) {
+      console.error('Error reading asset block:', error);
+      return null;
+    }
+  },
+
+  _createFooter(crc32) {
+    const footer = new Uint8Array(4);
+    const view = new DataView(footer.buffer);
+    view.setUint32(0, crc32, false); // Big-endian
+    return footer;
+  },
+
+  _verifyMagic(view) {
+    for (let i = 0; i < this.MAGIC_BYTES.length; i++) {
+      if (view.getUint8(i) !== this.MAGIC_BYTES[i]) {
+        return false;
+      }
+    }
+    return true;
+  },
+
+  _findSeparator(uint8Array, startOffset, separatorName) {
+    const separatorBytes = new TextEncoder().encode(separatorName);
+    for (let i = startOffset; i < uint8Array.length - separatorBytes.length; i++) {
+      let match = true;
+      for (let j = 0; j < separatorBytes.length; j++) {
+        if (uint8Array[i + j] !== separatorBytes[j]) {
+          match = false;
+          break;
+        }
+      }
+      if (match && i + separatorBytes.length < uint8Array.length && uint8Array[i + separatorBytes.length] === 0x00) {
+        return i;
+      }
+    }
+    return -1;
+  },
+
+  _readCRCFromEnd(uint8Array) {
+    const view = new DataView(uint8Array.buffer, uint8Array.byteOffset + uint8Array.length - 4, 4);
+    return view.getUint32(0, false);
+  },
+
+  _normalizeStoryAssets(story, assetMap) {
+    const normalized = JSON.parse(JSON.stringify(story)); // Deep clone
+
+    normalized.artefacts = normalized.artefacts.map(artefact => {
+      // Convert assetPath to assetId if asset exists
+      if (artefact.assetPath && !artefact.assetId) {
+        const filename = artefact.assetPath.split('/').pop();
+        if (assetMap[filename]) {
+          artefact.assetId = filename;
+        }
+      }
+      delete artefact.assetPath; // Remove old field
+      return artefact;
+    });
+
+    return normalized;
+  },
+
+  _fileToArrayBuffer(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsArrayBuffer(file);
+    });
+  },
+
+  _blobToArrayBuffer(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsArrayBuffer(blob);
+    });
+  },
+
+  // Simple CRC32 calculation
+  _calculateCRC32(buffer) {
+    let crc = 0xFFFFFFFF;
+    const uint8Array = new Uint8Array(buffer);
+
+    for (let i = 0; i < uint8Array.length; i++) {
+      crc ^= uint8Array[i];
+      for (let j = 0; j < 8; j++) {
+        crc = (crc >>> 1) ^ ((crc & 1) ? 0xEDB88320 : 0);
+      }
+    }
+
+    return (crc ^ 0xFFFFFFFF) >>> 0;
+  },
+
+  // SHA256 hash calculation for asset verification
+  async _calculateSHA256(buffer) {
+    const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+};
