@@ -3,45 +3,426 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="StoryEngine - Story Authoring Tool">
   <title>StoryEngine - Story Authoring Tool</title>
   <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/authoring.css">
 </head>
 <body>
-  <header>
-    <h1>⚙️ STORYENGINE AUTHORING TOOL ⚙️</h1>
-    <p class="tagline">&gt; Create immersive ARG stories</p>
-  </header>
-
-  <div class="container">
-    <section class="description">
-      <h2>Story Authoring Tool</h2>
-      <p>
-        Welcome to the StoryEngine Story Authoring Tool. This is where creators craft intricate ARG experiences
-        using our powerful story builder.
-      </p>
-
-      <h3>Features (Coming Soon)</h3>
-      <ul style="margin-left: 1.5rem; margin-bottom: 1rem;">
-        <li>📝 Create and manage story artifacts (emails, messages, documents, images, audio)</li>
-        <li>⏱️ Set release schedules and unlock conditions</li>
-        <li>🔐 Add password protection and conditional logic</li>
-        <li>👁️ Preview stories with test controls and time jumping</li>
-        <li>💾 Export stories as portable JSON files</li>
-      </ul>
-
-      <p style="color: var(--terminal-amber);">
-        <strong>Status:</strong> Development in progress. Check back soon!
-      </p>
-
-      <div style="margin-top: 2rem;">
-        <a href="../" class="cta-button" style="background-color: var(--accent-blue);">← Back to Home</a>
+  <div id="app">
+    <!-- Header -->
+    <header>
+      <h1>📖 StoryEngine Authoring</h1>
+      <div class="header-stats">
+        <span class="stat-item"><span class="stat-label">Story:</span> <span class="stat-value" id="story-title">New Story</span></span>
+        <span class="stat-item"><span class="stat-label">Artefacts:</span> <span class="stat-value" id="stat-artefacts">0</span></span>
+        <span class="stat-item"><span class="stat-label">Status:</span> <span class="stat-value" id="stat-status">Valid</span></span>
       </div>
-    </section>
+    </header>
+
+    <!-- Main Container -->
+    <div class="main-container">
+      <!-- Sidebar Navigation -->
+      <aside id="sidebar">
+        <nav>
+          <div class="nav-label">Navigation</div>
+          <div class="nav-section">
+            <button class="nav-item active" data-section="dashboard">📊 Dashboard</button>
+          </div>
+          <div class="nav-section">
+            <button class="nav-item" data-section="settings">⚙️ Settings</button>
+            <button class="nav-item" data-section="world-builder">🌐 World Builder</button>
+          </div>
+          <div class="nav-section">
+            <button class="nav-item" data-section="artefacts">📝 Artefacts</button>
+            <button class="nav-item" data-section="timeline">📈 Timeline</button>
+          </div>
+        </nav>
+      </aside>
+
+      <!-- Content Area -->
+      <div id="content">
+        <!-- Dashboard Section -->
+        <section class="section active" data-section="dashboard">
+          <div class="section-header">
+            <h2 class="section-title">Dashboard</h2>
+          </div>
+
+          <div class="dashboard-grid">
+            <div class="dashboard-card">
+              <h3>Story Overview</h3>
+              <form id="story-form">
+                <div class="form-group">
+                  <label>Story Title</label>
+                  <input type="text" id="story-name" placeholder="e.g. The Missing Monday">
+                </div>
+                <div class="form-group">
+                  <label>Author</label>
+                  <input type="text" id="story-author" placeholder="Your name">
+                </div>
+                <div class="form-group">
+                  <label>Description</label>
+                  <textarea id="story-description" placeholder="Brief description of your story..."></textarea>
+                </div>
+                <div class="form-group">
+                  <label>Version</label>
+                  <input type="text" id="story-version" value="1.0" placeholder="1.0">
+                </div>
+              </form>
+            </div>
+
+            <div class="dashboard-card">
+              <h3>Story Stats</h3>
+              <div style="margin-bottom: 12px;">
+                <p><strong>Total Artefacts:</strong> <span id="dashboard-artefact-count">0</span></p>
+                <p><strong>Locked Items:</strong> <span id="dashboard-locked-count">0</span></p>
+                <p><strong>Conditional Items:</strong> <span id="dashboard-conditional-count">0</span></p>
+              </div>
+
+              <h3 style="margin-top: 16px;">Content Breakdown</h3>
+              <p><span class="badge badge-info">Emails</span> <span id="stat-emails">0</span></p>
+              <p><span class="badge badge-info">Messages</span> <span id="stat-messages">0</span></p>
+              <p><span class="badge badge-info">Calendar</span> <span id="stat-calendar">0</span></p>
+              <p><span class="badge badge-info">Documents</span> <span id="stat-documents">0</span></p>
+              <p><span class="badge badge-info">Images</span> <span id="stat-images">0</span></p>
+              <p><span class="badge badge-info">Audio</span> <span id="stat-audio">0</span></p>
+            </div>
+          </div>
+
+          <div style="margin-top: 20px;">
+            <h3 style="color: var(--terminal-amber); font-size: 12px; text-transform: uppercase;">Quick Actions</h3>
+            <div style="display: flex; gap: 10px; margin-top: 12px;">
+              <button onclick="app.goToSection('artefacts')">+ Create Artefact</button>
+              <button class="secondary" onclick="app.goToSection('timeline')">View Timeline</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Settings Section -->
+        <section class="section" data-section="settings">
+          <div class="section-header">
+            <h2 class="section-title">Story Settings</h2>
+          </div>
+
+          <div class="tabs">
+            <button class="tab-button active" data-tab="metadata">Metadata</button>
+            <button class="tab-button" data-tab="theme">Theme</button>
+            <button class="tab-button" data-tab="login">Login</button>
+            <button class="tab-button" data-tab="ending">Ending</button>
+          </div>
+
+          <!-- Metadata Tab -->
+          <div class="tab-content active" data-tab="metadata">
+            <form id="metadata-form">
+              <div class="form-group">
+                <label>Story Title</label>
+                <input type="text" id="settings-story-name" placeholder="e.g. The Missing Monday">
+              </div>
+              <div class="form-group">
+                <label>Author</label>
+                <input type="text" id="settings-story-author" placeholder="Your name">
+              </div>
+              <div class="form-group">
+                <label>Description</label>
+                <textarea id="settings-story-description" placeholder="Detailed description of your story..."></textarea>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Version</label>
+                  <input type="text" id="settings-story-version" value="1.0">
+                </div>
+                <div class="form-group">
+                  <label>Genre/Tags</label>
+                  <input type="text" id="settings-story-tags" placeholder="e.g. Mystery, ARG, Interactive">
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Theme Tab -->
+          <div class="tab-content" data-tab="theme">
+            <div class="form-group">
+              <label>Desktop Theme</label>
+              <select id="settings-theme">
+                <option value="retro-dark">Retro Dark (Default)</option>
+                <option value="retro-green" disabled>Retro Green (Coming Soon)</option>
+                <option value="retro-amber" disabled>Retro Amber (Coming Soon)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Wallpaper</label>
+              <input type="text" id="settings-wallpaper" placeholder="Path to background image (optional)">
+            </div>
+            <div class="form-group">
+              <label>Custom Colors (Optional)</label>
+              <p style="color: var(--text-secondary); font-size: 11px; margin-top: 8px;">Coming in future version</p>
+            </div>
+          </div>
+
+          <!-- Login Tab -->
+          <div class="tab-content" data-tab="login">
+            <div class="form-group">
+              <label>
+                <input type="checkbox" id="settings-login-required"> Require Login
+              </label>
+            </div>
+            <div id="login-fields" style="display: none;">
+              <div class="form-group">
+                <label>Login Message</label>
+                <textarea id="settings-login-message" placeholder="Message shown on login screen..."></textarea>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Default Username</label>
+                  <input type="text" id="settings-login-username" placeholder="e.g. player">
+                </div>
+                <div class="form-group">
+                  <label>Default Password</label>
+                  <input type="password" id="settings-login-password" placeholder="Optional">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Ending Tab -->
+          <div class="tab-content" data-tab="ending">
+            <div class="form-group">
+              <label>Ending Title</label>
+              <input type="text" id="settings-ending-title" placeholder="e.g. Case Closed">
+            </div>
+            <div class="form-group">
+              <label>Ending Message</label>
+              <textarea id="settings-ending-message" placeholder="Message shown when story ends..."></textarea>
+            </div>
+            <div class="form-group">
+              <label>Ending Condition</label>
+              <select id="settings-ending-condition">
+                <option value="time">After X minutes</option>
+                <option value="artefact">When specific artefact viewed</option>
+                <option value="all-unlocked">When all items unlocked</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Ending Value</label>
+              <input type="text" id="settings-ending-value" placeholder="Minutes, artefact ID, etc.">
+            </div>
+          </div>
+        </section>
+
+        <!-- World Builder Section -->
+        <section class="section" data-section="world-builder">
+          <div class="section-header">
+            <h2 class="section-title">World Builder</h2>
+            <p style="color: var(--text-secondary); font-size: 11px; margin: 0;">Define entities referenced in artefacts</p>
+          </div>
+
+          <div class="tabs">
+            <button class="tab-button active" data-tab="senders">Email Senders</button>
+            <button class="tab-button" data-tab="participants">IM Participants</button>
+            <button class="tab-button" data-tab="folders">Folders</button>
+            <button class="tab-button" data-tab="calendar">Calendar</button>
+          </div>
+
+          <!-- Email Senders Tab -->
+          <div class="tab-content active" data-tab="senders">
+            <div class="world-section">
+              <h3>Email Senders/Accounts</h3>
+              <div class="form-group">
+                <label>New Sender Email</label>
+                <input type="email" id="new-sender-email" placeholder="e.g. alex@company.com">
+              </div>
+              <div class="form-group">
+                <label>Sender Name</label>
+                <input type="text" id="new-sender-name" placeholder="e.g. Alex Morgan">
+              </div>
+              <button onclick="app.addEntity('sender')">+ Add Sender</button>
+
+              <ul class="entity-list" id="senders-list"></ul>
+            </div>
+          </div>
+
+          <!-- IM Participants Tab -->
+          <div class="tab-content" data-tab="participants">
+            <div class="world-section">
+              <h3>IM Participants/Contacts</h3>
+              <div class="form-group">
+                <label>Participant Username</label>
+                <input type="text" id="new-participant-name" placeholder="e.g. @jordan_says">
+              </div>
+              <div class="form-group">
+                <label>Display Name</label>
+                <input type="text" id="new-participant-display" placeholder="e.g. Jordan Chen">
+              </div>
+              <button onclick="app.addEntity('participant')">+ Add Participant</button>
+
+              <ul class="entity-list" id="participants-list"></ul>
+            </div>
+          </div>
+
+          <!-- Folders Tab -->
+          <div class="tab-content" data-tab="folders">
+            <div class="world-section">
+              <h3>Desktop Folders</h3>
+              <div class="form-group">
+                <label>Folder Name</label>
+                <input type="text" id="new-folder-name" placeholder="e.g. Documents, Evidence">
+              </div>
+              <button onclick="app.addEntity('folder')">+ Add Folder</button>
+
+              <ul class="entity-list" id="folders-list"></ul>
+            </div>
+          </div>
+
+          <!-- Calendar Tab -->
+          <div class="tab-content" data-tab="calendar">
+            <div class="world-section">
+              <h3>Calendar Setup</h3>
+              <div class="form-group">
+                <label>Calendar Owner Name</label>
+                <input type="text" id="calendar-owner" placeholder="e.g. Sam's Calendar">
+              </div>
+              <div class="form-group">
+                <label>Starting Date</label>
+                <input type="text" id="calendar-start-date" placeholder="e.g. 2024-01-15">
+              </div>
+              <p style="color: var(--text-secondary); font-size: 11px; margin-top: 12px;">Calendar entries are created as artefacts and automatically added to this calendar.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Artefacts Section -->
+        <section class="section" data-section="artefacts">
+          <div class="section-header">
+            <h2 class="section-title">Artefact Library</h2>
+          </div>
+
+          <div class="two-pane">
+            <!-- Left Pane: Artefact List -->
+            <div class="pane">
+              <div class="pane-header">
+                Artefacts (<span id="artefact-count">0</span>)
+              </div>
+              <div class="pane-content">
+                <div class="filter-controls">
+                  <select id="type-filter" onchange="app.filterArtefacts()">
+                    <option value="">All Types</option>
+                    <option value="email">Email</option>
+                    <option value="message">Message</option>
+                    <option value="calendar">Calendar</option>
+                    <option value="document">Document</option>
+                    <option value="image">Image</option>
+                    <option value="audio">Audio</option>
+                  </select>
+                </div>
+                <div class="filter-controls">
+                  <button onclick="app.createNewArtefact()" style="flex: 1;">+ New</button>
+                </div>
+                <ul class="artefact-list" id="artefact-list"></ul>
+              </div>
+            </div>
+
+            <!-- Right Pane: Artefact Editor -->
+            <div class="pane">
+              <div class="pane-header">
+                Artefact Editor
+              </div>
+              <div class="pane-content">
+                <div id="artefact-editor">
+                  <p style="color: var(--text-secondary); text-align: center; margin-top: 40px;">
+                    Select an artefact to edit or create a new one →
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Timeline Section -->
+        <section class="section" data-section="timeline">
+          <div class="section-header">
+            <h2 class="section-title">Timeline & Release Schedule</h2>
+          </div>
+
+          <p style="color: var(--text-secondary); margin-bottom: 16px; font-size: 12px;">
+            All artefacts ordered by their release time. Click to edit.
+          </p>
+
+          <table class="timeline-table">
+            <thead>
+              <tr>
+                <th>Release Time</th>
+                <th>Artefact</th>
+                <th>Type</th>
+                <th>Locked?</th>
+                <th>Conditional?</th>
+              </tr>
+            </thead>
+            <tbody id="timeline-body">
+              <tr>
+                <td colspan="5" style="text-align: center; color: var(--text-secondary);">No artefacts yet. Create one to get started.</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+      <button class="secondary" onclick="app.openPreview()">👁️ Preview</button>
+      <button class="secondary" onclick="app.validateStory()">✓ Validate</button>
+      <button onclick="app.exportStory()">⬇️ Export JSON</button>
+      <button onclick="app.saveStory()">💾 Save</button>
+    </footer>
+
+    <!-- Condition Builder Modal -->
+    <div class="modal" id="condition-modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Condition Builder</h2>
+          <p style="color: var(--text-secondary); font-size: 11px; margin: 6px 0 0 0;">
+            Set when this artefact becomes available to the player
+          </p>
+        </div>
+
+        <div style="margin-bottom: 16px;">
+          <label>Release Type</label>
+          <select id="condition-type" onchange="app.updateConditionFields()">
+            <option value="time">After elapsed time (minutes)</option>
+            <option value="opened">When artefact is opened</option>
+            <option value="read">When artefact is read</option>
+            <option value="password">Password unlock</option>
+            <option value="app">When app/folder opened</option>
+          </select>
+        </div>
+
+        <div id="condition-fields">
+          <div class="form-group">
+            <label>Minutes after story start</label>
+            <input type="number" id="condition-time-value" min="0" placeholder="0">
+          </div>
+        </div>
+
+        <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border-color);">
+          <label style="font-size: 11px;">
+            <input type="checkbox" id="condition-and"> Combine multiple conditions (AND)
+          </label>
+          <p style="font-size: 11px; color: var(--text-secondary); margin-top: 6px;">
+            When checked, all conditions must be met. Leave unchecked for OR logic.
+          </p>
+        </div>
+
+        <div class="modal-footer">
+          <button onclick="app.closeConditionModal()" class="secondary">Cancel</button>
+          <button onclick="app.saveCondition()">Save Condition</button>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <footer>
-    <p>StoryEngine v1.0 | <a href="../">Home</a></p>
-  </footer>
+  <!-- Scripts -->
+  <script src="js/state.js"></script>
+  <script src="js/renderer.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>
