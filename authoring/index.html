@@ -216,14 +216,14 @@
           </div>
 
           <div class="tabs">
-            <button class="tab-button active" data-tab="senders">Email Senders</button>
-            <button class="tab-button" data-tab="participants">IM Participants</button>
-            <button class="tab-button" data-tab="folders">Folders</button>
-            <button class="tab-button" data-tab="calendar">Calendar</button>
+            <button class="tab-button active" data-tab="email-setup">Email Setup</button>
+            <button class="tab-button" data-tab="im-setup">IM Setup</button>
+            <button class="tab-button" data-tab="files-calendar">Files & Calendar</button>
           </div>
 
-          <!-- Email Senders Tab -->
-          <div class="tab-content active" data-tab="senders">
+          <!-- Email Setup Tab -->
+          <div class="tab-content active" data-tab="email-setup">
+            <!-- Email Senders Sub-section -->
             <div class="world-section">
               <h3>Email Senders/Accounts</h3>
               <div class="form-group">
@@ -235,13 +235,24 @@
                 <input type="text" id="new-sender-name" placeholder="e.g. Alex Morgan">
               </div>
               <button onclick="app.addEntity('sender')">+ Add Sender</button>
-
               <ul class="entity-list" id="senders-list"></ul>
+            </div>
+
+            <!-- Email Threads Sub-section -->
+            <div class="world-section">
+              <h3>Email Threads</h3>
+              <div class="form-group">
+                <label>Thread Name</label>
+                <input type="text" id="new-thread-name" placeholder="e.g. Investigation Updates, Client Correspondence">
+              </div>
+              <button onclick="app.addEntity('thread')">+ Add Thread</button>
+              <ul class="entity-list" id="threads-list"></ul>
             </div>
           </div>
 
-          <!-- IM Participants Tab -->
-          <div class="tab-content" data-tab="participants">
+          <!-- IM Setup Tab -->
+          <div class="tab-content" data-tab="im-setup">
+            <!-- IM Participants Sub-section -->
             <div class="world-section">
               <h3>IM Participants/Contacts</h3>
               <div class="form-group">
@@ -253,13 +264,24 @@
                 <input type="text" id="new-participant-display" placeholder="e.g. Jordan Chen">
               </div>
               <button onclick="app.addEntity('participant')">+ Add Participant</button>
-
               <ul class="entity-list" id="participants-list"></ul>
+            </div>
+
+            <!-- IM Conversations Sub-section -->
+            <div class="world-section">
+              <h3>IM Conversations</h3>
+              <div class="form-group">
+                <label>Conversation Name</label>
+                <input type="text" id="new-conversation-name" placeholder="e.g. Team Chat, Secret Channel">
+              </div>
+              <button onclick="app.addEntity('conversation')">+ Add Conversation</button>
+              <ul class="entity-list" id="conversations-list"></ul>
             </div>
           </div>
 
-          <!-- Folders Tab -->
-          <div class="tab-content" data-tab="folders">
+          <!-- Files & Calendar Tab -->
+          <div class="tab-content" data-tab="files-calendar">
+            <!-- Folders Sub-section -->
             <div class="world-section">
               <h3>Desktop Folders</h3>
               <div class="form-group">
@@ -267,13 +289,10 @@
                 <input type="text" id="new-folder-name" placeholder="e.g. Documents, Evidence">
               </div>
               <button onclick="app.addEntity('folder')">+ Add Folder</button>
-
               <ul class="entity-list" id="folders-list"></ul>
             </div>
-          </div>
 
-          <!-- Calendar Tab -->
-          <div class="tab-content" data-tab="calendar">
+            <!-- Calendar Sub-section -->
             <div class="world-section">
               <h3>Calendar Setup</h3>
               <div class="form-group">

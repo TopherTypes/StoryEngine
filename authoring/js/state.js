@@ -30,7 +30,9 @@ const State = {
 
       // World entities
       emailSenders: [],
+      emailThreads: [],
       imParticipants: [],
+      imConversations: [],
       folders: [],
       calendarOwner: '',
       calendarStartDate: '',

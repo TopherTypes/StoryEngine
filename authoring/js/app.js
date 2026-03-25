@@ -327,6 +327,36 @@ const app = {
         this.story.folders.push(entity);
         document.getElementById('new-folder-name').value = '';
         break;
+
+      case 'thread':
+        const threadName = document.getElementById('new-thread-name')?.value.trim();
+        if (!threadName) {
+          UI.alert('Please enter a thread name');
+          return;
+        }
+        entity = {
+          id: State.generateId(),
+          type: 'thread',
+          name: threadName
+        };
+        this.story.emailThreads.push(entity);
+        document.getElementById('new-thread-name').value = '';
+        break;
+
+      case 'conversation':
+        const conversationName = document.getElementById('new-conversation-name')?.value.trim();
+        if (!conversationName) {
+          UI.alert('Please enter a conversation name');
+          return;
+        }
+        entity = {
+          id: State.generateId(),
+          type: 'conversation',
+          name: conversationName
+        };
+        this.story.imConversations.push(entity);
+        document.getElementById('new-conversation-name').value = '';
+        break;
     }
 
     this.saveStory();
@@ -347,6 +377,24 @@ const app = {
         break;
       case 'folder':
         this.story.folders = this.story.folders.filter(f => f.id !== entityId);
+        break;
+      case 'thread':
+        this.story.emailThreads = this.story.emailThreads.filter(t => t.id !== entityId);
+        // Clear threadId from all emails that referenced this thread
+        this.story.artefacts.forEach(a => {
+          if (a.type === 'email' && a.threadId === entityId) {
+            a.threadId = '';
+          }
+        });
+        break;
+      case 'conversation':
+        this.story.imConversations = this.story.imConversations.filter(c => c.id !== entityId);
+        // Clear conversationId from all messages that referenced this conversation
+        this.story.artefacts.forEach(a => {
+          if (a.type === 'message' && a.conversationId === entityId) {
+            a.conversationId = '';
+          }
+        });
         break;
     }
 

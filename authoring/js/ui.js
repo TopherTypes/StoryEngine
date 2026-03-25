@@ -32,7 +32,7 @@ const UI = {
 
         // Add active to clicked button and corresponding content
         e.target.classList.add('active');
-        const activeContent = parent.querySelector(`[data-tab="${tabName}"]`);
+        const activeContent = parent.querySelector(`.tab-content[data-tab="${tabName}"]`);
         if (activeContent) {
           activeContent.classList.add('active');
         }
