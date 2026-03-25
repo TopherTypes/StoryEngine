@@ -271,8 +271,38 @@ const app = {
 
   // Filter artefacts
   filterArtefacts() {
+    const searchText = document.getElementById('artefact-search')?.value.toLowerCase() || '';
     const filterType = document.getElementById('type-filter')?.value || '';
-    Renderer.renderArtefactList(this.story, filterType);
+    const filterStatus = document.getElementById('status-filter')?.value || '';
+
+    // Filter artefacts based on all criteria
+    const filtered = this.story.artefacts.filter(artefact => {
+      // Type filter
+      if (filterType && artefact.type !== filterType) return false;
+
+      // Status filter
+      if (filterStatus === 'locked' && !artefact.locked && (!artefact.releaseTriggers || artefact.releaseTriggers.length === 0)) return false;
+      if (filterStatus === 'unlocked' && (artefact.locked || (artefact.releaseTriggers && artefact.releaseTriggers.length > 0))) return false;
+
+      // Search filter - search in title and tags
+      if (searchText) {
+        const title = artefact.title.toLowerCase();
+        const tags = (artefact.tags || []).join(' ').toLowerCase();
+        if (!title.includes(searchText) && !tags.includes(searchText)) return false;
+      }
+
+      return true;
+    });
+
+    // Render filtered list
+    Renderer.renderArtefactListFiltered(this.story, filtered);
+  },
+
+  clearArtefactFilters() {
+    document.getElementById('artefact-search').value = '';
+    document.getElementById('type-filter').value = '';
+    document.getElementById('status-filter').value = '';
+    this.filterArtefacts();
   },
 
   // Condition builder

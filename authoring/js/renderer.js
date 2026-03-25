@@ -69,6 +69,53 @@ const Renderer = {
     document.getElementById('calendar-start-date').value = story.calendarStartDate;
   },
 
+  // Render filtered artefact list (used by search/filter feature)
+  renderArtefactListFiltered(story, filtered) {
+    const artefactList = document.getElementById('artefact-list');
+    if (!artefactList) return;
+
+    artefactList.innerHTML = '';
+
+    // Sort by release time
+    const sorted = [...filtered].sort((a, b) => a.releaseAtTime - b.releaseAtTime);
+
+    if (sorted.length === 0) {
+      artefactList.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 20px; font-size: 11px;">No artefacts match the filters.</p>';
+      return;
+    }
+
+    sorted.forEach(artefact => {
+      const li = document.createElement('li');
+      li.className = 'artefact-item';
+      li.onclick = () => app.selectArtefact(artefact.id);
+      li.dataset.artefactId = artefact.id;
+
+      const typeEmoji = {
+        email: '📧',
+        message: '💬',
+        calendar: '📅',
+        document: '📄',
+        image: '🖼️',
+        audio: '🎵'
+      }[artefact.type] || '📋';
+
+      const lockReason = this.getArtefactLockReason(story, artefact);
+      const lockBadge = lockReason ? `<span class="badge badge-warning" title="${this.escapeHtml(lockReason)}" style="margin-top: 4px; cursor: help;">🔒 ${lockReason.split(' + ').length > 1 ? 'Multi-locked' : 'Locked'}</span>` : '';
+
+      li.innerHTML = `
+        <div class="artefact-item-title">${typeEmoji} ${this.escapeHtml(artefact.title)}</div>
+        <div class="artefact-item-meta">
+          <div>T+${artefact.releaseAtTime}min</div>
+          ${lockBadge}
+        </div>
+      `;
+
+      artefactList.appendChild(li);
+    });
+
+    document.getElementById('artefact-count').textContent = sorted.length;
+  },
+
   // Render artefact list
   renderArtefactList(story, filterType = null) {
     const artefactList = document.getElementById('artefact-list');
