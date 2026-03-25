@@ -6,44 +6,91 @@ class PlayerState {
   constructor() {
     this.db = null;
     this.currentState = null;
+    this.useInMemoryStorage = false;
+    this.inMemoryGames = new Map(); // Fallback in-memory storage
   }
 
-  // Initialize database
+  // Initialize database with timeout protection
   async init() {
+    console.log('[PlayerState] Initializing IndexedDB...');
+
     return new Promise((resolve, reject) => {
-      const request = indexedDB.open('StoryEnginePlayer', 1);
-
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => {
-        this.db = request.result;
+      // Set a 5-second timeout for IndexedDB to respond
+      const timeoutId = setTimeout(() => {
+        console.warn('[PlayerState] IndexedDB initialization timeout - falling back to in-memory state');
+        this.useInMemoryStorage = true;
         resolve();
-      };
+      }, 5000);
 
-      request.onupgradeneeded = (event) => {
-        const db = event.target.result;
-        if (!db.objectStoreNames.contains('games')) {
-          db.createObjectStore('games', { keyPath: 'storyId' });
-        }
-      };
+      try {
+        const request = indexedDB.open('StoryEnginePlayer', 1);
+
+        request.onerror = () => {
+          clearTimeout(timeoutId);
+          console.error('[PlayerState] IndexedDB error:', request.error);
+          console.warn('[PlayerState] Falling back to in-memory state');
+          this.useInMemoryStorage = true;
+          resolve(); // Don't reject, fall back gracefully
+        };
+
+        request.onsuccess = () => {
+          clearTimeout(timeoutId);
+          this.db = request.result;
+          console.log('[PlayerState] IndexedDB initialized successfully');
+          resolve();
+        };
+
+        request.onupgradeneeded = (event) => {
+          console.log('[PlayerState] IndexedDB upgrade needed');
+          const db = event.target.result;
+          if (!db.objectStoreNames.contains('games')) {
+            db.createObjectStore('games', { keyPath: 'storyId' });
+          }
+        };
+      } catch (e) {
+        clearTimeout(timeoutId);
+        console.error('[PlayerState] Exception during IndexedDB init:', e);
+        console.warn('[PlayerState] Falling back to in-memory state');
+        this.useInMemoryStorage = true;
+        resolve(); // Don't reject, fall back gracefully
+      }
     });
   }
 
   // Get game state for a story
   async getGameState(storyId) {
-    return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction(['games'], 'readonly');
-      const store = transaction.objectStore('games');
-      const request = store.get(storyId);
+    // Use in-memory storage if IndexedDB is unavailable
+    if (this.useInMemoryStorage || !this.db) {
+      console.log('[PlayerState] Using in-memory storage for getGameState');
+      const state = this.inMemoryGames.get(storyId);
+      if (state) {
+        this.convertArraysToSets(state);
+      }
+      return state || null;
+    }
 
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => {
-        const state = request.result;
-        if (state) {
-          // Convert Sets back from arrays
-          this.convertArraysToSets(state);
-        }
-        resolve(state || null);
-      };
+    return new Promise((resolve, reject) => {
+      try {
+        const transaction = this.db.transaction(['games'], 'readonly');
+        const store = transaction.objectStore('games');
+        const request = store.get(storyId);
+
+        request.onerror = () => {
+          console.error('[PlayerState] Error retrieving game state:', request.error);
+          resolve(null);
+        };
+        request.onsuccess = () => {
+          const state = request.result;
+          if (state) {
+            // Convert Sets back from arrays
+            this.convertArraysToSets(state);
+          }
+          resolve(state || null);
+        };
+      } catch (e) {
+        console.error('[PlayerState] Exception during getGameState:', e);
+        resolve(null);
+      }
     });
   }
 
@@ -72,32 +119,74 @@ class PlayerState {
 
   // Save game state
   async saveGameState(gameState) {
-    return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction(['games'], 'readwrite');
-      const store = transaction.objectStore('games');
-
-      // Convert Sets and Maps to arrays for storage
+    // Use in-memory storage if IndexedDB is unavailable
+    if (this.useInMemoryStorage || !this.db) {
+      console.log('[PlayerState] Using in-memory storage for saveGameState');
       const stateToStore = this.convertSetsToArrays(gameState);
+      this.inMemoryGames.set(gameState.storyId, stateToStore);
+      this.currentState = gameState;
+      return;
+    }
 
-      const request = store.put(stateToStore);
+    return new Promise((resolve, reject) => {
+      try {
+        const transaction = this.db.transaction(['games'], 'readwrite');
+        const store = transaction.objectStore('games');
 
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => {
+        // Convert Sets and Maps to arrays for storage
+        const stateToStore = this.convertSetsToArrays(gameState);
+
+        const request = store.put(stateToStore);
+
+        request.onerror = () => {
+          console.error('[PlayerState] Error saving game state:', request.error);
+          // Fall back to in-memory storage
+          this.inMemoryGames.set(gameState.storyId, stateToStore);
+          this.currentState = gameState;
+          resolve();
+        };
+        request.onsuccess = () => {
+          this.currentState = gameState;
+          resolve();
+        };
+      } catch (e) {
+        console.error('[PlayerState] Exception during saveGameState:', e);
+        const stateToStore = this.convertSetsToArrays(gameState);
+        this.inMemoryGames.set(gameState.storyId, stateToStore);
         this.currentState = gameState;
         resolve();
-      };
+      }
     });
   }
 
   // Delete game state
   async deleteGameState(storyId) {
-    return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction(['games'], 'readwrite');
-      const store = transaction.objectStore('games');
-      const request = store.delete(storyId);
+    // Use in-memory storage if IndexedDB is unavailable
+    if (this.useInMemoryStorage || !this.db) {
+      console.log('[PlayerState] Using in-memory storage for deleteGameState');
+      this.inMemoryGames.delete(storyId);
+      return;
+    }
 
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => resolve();
+    return new Promise((resolve, reject) => {
+      try {
+        const transaction = this.db.transaction(['games'], 'readwrite');
+        const store = transaction.objectStore('games');
+        const request = store.delete(storyId);
+
+        request.onerror = () => {
+          console.error('[PlayerState] Error deleting game state:', request.error);
+          this.inMemoryGames.delete(storyId);
+          resolve();
+        };
+        request.onsuccess = () => {
+          resolve();
+        };
+      } catch (e) {
+        console.error('[PlayerState] Exception during deleteGameState:', e);
+        this.inMemoryGames.delete(storyId);
+        resolve();
+      }
     });
   }
 
