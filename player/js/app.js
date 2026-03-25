@@ -312,6 +312,20 @@ class PlayerApp {
     const artefact = this.story.artefacts.find(a => a.id === artefactId);
     if (!artefact) return;
 
+    // Check if password protected and not yet unlocked
+    if (artefact.password && !this.gameState.isPasswordUnlocked(artefactId)) {
+      this.showPasswordPrompt(artefactId, (success) => {
+        if (success) {
+          this.markArtefactOpenAndRoute(artefact, artefactId);
+        }
+      });
+      return;
+    }
+
+    this.markArtefactOpenAndRoute(artefact, artefactId);
+  }
+
+  markArtefactOpenAndRoute(artefact, artefactId) {
     // Mark as opened
     this.gameState.markArtefactOpened(artefactId);
 
@@ -323,6 +337,27 @@ class PlayerApp {
     } else if (artefact.type === 'audio') {
       this.openAudioWindow(artefact);
     }
+  }
+
+  showPasswordPrompt(artefactId, callback) {
+    this.renderer.showPasswordPromptModal(artefactId, (password) => {
+      if (password === null) {
+        callback(false);
+        return;
+      }
+
+      const artefact = this.story.artefacts.find(a => a.id === artefactId);
+      if (artefact && artefact.password === password) {
+        this.gameState.unlockPassword(artefactId, password);
+        callback(true);
+      } else {
+        this.renderer.showPasswordError('Incorrect password');
+        // Retry
+        setTimeout(() => {
+          this.showPasswordPrompt(artefactId, callback);
+        }, 500);
+      }
+    });
   }
 
   openDocumentWindow(document) {
@@ -515,6 +550,15 @@ class PlayerApp {
           title: 'Test Audio',
           assetId: 'data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEAQB8AAAB9AAACABAAZGF0YQIAAAAAAA==',
           folderPath: '/',
+          releaseAtTime: 0
+        },
+        {
+          id: 'doc-locked-001',
+          type: 'document',
+          title: 'Secret Document',
+          body: '# Confidential Information\n\nThis document contains **sensitive** information that requires a password to access.',
+          folderPath: '/',
+          password: 'secret123',
           releaseAtTime: 0
         }
       ],

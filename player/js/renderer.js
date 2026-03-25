@@ -332,11 +332,74 @@ class Renderer {
     }
   }
 
-  // Show password prompt
+  // Show password prompt (old alert-based version, kept for compatibility)
   showPasswordPrompt(callback) {
     const password = prompt('This content is password-protected. Enter password:');
     if (password !== null) {
       callback(password);
+    }
+  }
+
+  // Show password prompt modal (new version with proper UI)
+  showPasswordPromptModal(artefactId, callback) {
+    // Create modal overlay
+    const modal = document.createElement('div');
+    modal.className = 'password-prompt-modal';
+    modal.id = `password-modal-${artefactId}`;
+    modal.innerHTML = `
+      <div class="password-prompt-container">
+        <div class="password-prompt-title">🔒 Password Protected</div>
+        <div class="password-prompt-message">This content is password protected. Please enter the password:</div>
+        <input type="password" class="password-prompt-input" placeholder="Enter password" autocomplete="off">
+        <div class="password-error-message" style="display: none; color: #ff6b6b; margin-top: 0.5rem;"></div>
+        <div class="password-prompt-buttons">
+          <button class="password-submit-btn">Unlock</button>
+          <button class="password-cancel-btn">Cancel</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Get elements
+    const input = modal.querySelector('.password-prompt-input');
+    const submitBtn = modal.querySelector('.password-submit-btn');
+    const cancelBtn = modal.querySelector('.password-cancel-btn');
+    const errorMsg = modal.querySelector('.password-error-message');
+
+    // Focus input
+    setTimeout(() => input.focus(), 100);
+
+    // Handle submit
+    const handleSubmit = () => {
+      const password = input.value;
+      modal.remove();
+      callback(password);
+    };
+
+    // Handle cancel
+    const handleCancel = () => {
+      modal.remove();
+      callback(null);
+    };
+
+    submitBtn.addEventListener('click', handleSubmit);
+    cancelBtn.addEventListener('click', handleCancel);
+    input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleSubmit();
+      if (e.key === 'Escape') handleCancel();
+    });
+  }
+
+  // Show password error
+  showPasswordError(message) {
+    const modal = document.querySelector('.password-prompt-modal');
+    if (modal) {
+      const errorMsg = modal.querySelector('.password-error-message');
+      if (errorMsg) {
+        errorMsg.textContent = message;
+        errorMsg.style.display = 'block';
+      }
     }
   }
 
