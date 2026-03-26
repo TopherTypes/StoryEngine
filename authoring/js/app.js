@@ -667,9 +667,34 @@ const app = {
     return storyForExport;
   },
 
+  // Normalize ending properties to ensure correct field names for export
+  normalizeEndingPropertiesForExport(story) {
+    // Assume story is already a copy from normalizeLoginPropertiesForExport
+    if (!story.ending || typeof story.ending !== 'object') {
+      return story;
+    }
+
+    // Ensure ending triggers use 'minutes' field instead of 'value' for time rules
+    if (story.ending.triggerConditions && Array.isArray(story.ending.triggerConditions)) {
+      story.ending.triggerConditions = story.ending.triggerConditions.map(rule => {
+        if (rule.type === 'time' && rule.value !== undefined && rule.minutes === undefined) {
+          const minutes = parseInt(rule.value, 10);
+          return {
+            ...rule,
+            minutes: isNaN(minutes) ? 60 : minutes
+          };
+        }
+        return rule;
+      });
+    }
+
+    return story;
+  },
+
   // Export as JSON
   exportStory() {
-    const storyForExport = this.normalizeLoginPropertiesForExport(this.story);
+    let storyForExport = this.normalizeLoginPropertiesForExport(this.story);
+    storyForExport = this.normalizeEndingPropertiesForExport(storyForExport);
     const json = State.exportStory(storyForExport);
     const filename = `${this.story.title.replace(/\s+/g, '-').toLowerCase()}_${Date.now()}.json`;
     UI.downloadFile(json, filename);
@@ -680,8 +705,9 @@ const app = {
     try {
       UI.showSpinner('Creating bundle...');
 
-      // Normalize login properties for export
-      const storyForExport = this.normalizeLoginPropertiesForExport(this.story);
+      // Normalize login and ending properties for export
+      let storyForExport = this.normalizeLoginPropertiesForExport(this.story);
+      storyForExport = this.normalizeEndingPropertiesForExport(storyForExport);
 
       // Collect assets from artefacts
       const assets = [];
