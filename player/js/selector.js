@@ -214,30 +214,38 @@ class StorySelector {
       }
 
       console.log('[Selector] Processing file:', file.name);
+      console.log('[Selector] File size:', (file.size / 1024).toFixed(2), 'KB');
+      console.log('[Selector] File type:', file.type);
 
       // Read and parse file
       const arrayBuffer = await file.arrayBuffer();
       let story = null;
 
       if (file.name.endsWith('.story')) {
+        console.log('[Selector] Detected .story bundle format');
         // Parse as bundle
         const result = await StoryBundle.parseBundle(file);
         story = result.story;
+        console.log('[Selector] ✓ Bundle parsed, story ID:', story?.id, 'title:', story?.title);
         if (this.onStoryLoaded) {
           this.onStoryLoaded(result);
         }
       } else {
+        console.log('[Selector] Parsing as JSON file');
         // Parse as JSON
         const text = new TextDecoder().decode(arrayBuffer);
         story = JSON.parse(text);
+        console.log('[Selector] ✓ JSON parsed, story ID:', story?.id, 'title:', story?.title);
       }
 
       if (story && story.id && story.title) {
+        console.log('[Selector] ✓ Story validation passed, adding to recent stories');
         this.addRecentStory(story, file.name);
         if (this.onStorySelected) {
           this.onStorySelected(story, file);
         }
       } else {
+        console.error('[Selector] ❌ Story validation failed. Story object:', story, 'has id:', story?.id, 'has title:', story?.title);
         this.showError('Invalid story file format.', errorElement);
       }
     } catch (e) {
@@ -264,28 +272,39 @@ class StorySelector {
           console.log('[Selector] Loading from URL:', url);
 
           const response = await fetch(url);
+          console.log('[Selector] Response status:', response.status, response.statusText);
+          console.log('[Selector] Response content-type:', response.headers.get('content-type'));
+          console.log('[Selector] Response content-length:', response.headers.get('content-length'), 'bytes');
+
           if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
           }
 
           let story = null;
           if (url.endsWith('.story')) {
+            console.log('[Selector] Detected .story bundle format from URL');
             const blob = await response.blob();
+            console.log('[Selector] Blob created, size:', (blob.size / 1024).toFixed(2), 'KB');
             const result = await StoryBundle.parseBundle(blob);
             story = result.story;
+            console.log('[Selector] ✓ Bundle parsed from URL, story ID:', story?.id, 'title:', story?.title);
             if (this.onStoryLoaded) {
               this.onStoryLoaded(result);
             }
           } else {
+            console.log('[Selector] Parsing response as JSON');
             story = await response.json();
+            console.log('[Selector] ✓ JSON parsed from URL, story ID:', story?.id, 'title:', story?.title);
           }
 
           if (story && story.id && story.title) {
+            console.log('[Selector] ✓ Story validation passed, adding to recent stories');
             this.addRecentStory(story, url);
             if (this.onStorySelected) {
               this.onStorySelected(story, null);
             }
           } else {
+            console.error('[Selector] ❌ Story validation failed. Story object:', story, 'has id:', story?.id, 'has title:', story?.title);
             this.showError('Invalid story data from URL', error);
           }
         } catch (e) {
