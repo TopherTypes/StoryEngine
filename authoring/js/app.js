@@ -571,9 +571,42 @@ const app = {
     UI.showValidation(issues);
   },
 
+  // Normalize login properties from flat to nested structure for export
+  normalizeLoginPropertiesForExport(story) {
+    // Create a copy to avoid mutating the working story
+    const storyForExport = JSON.parse(JSON.stringify(story));
+
+    // Transform flat login properties into nested structure
+    if (storyForExport.loginUsername !== undefined || storyForExport.loginPassword !== undefined || storyForExport.loginRequired !== undefined) {
+      storyForExport.login = {
+        enabled: storyForExport.loginRequired || false,
+        username: storyForExport.loginUsername || '',
+        password: storyForExport.loginPassword || '',
+        message: storyForExport.loginMessage || ''
+      };
+    } else {
+      // Default login object if no login properties exist
+      storyForExport.login = {
+        enabled: false,
+        username: '',
+        password: '',
+        message: ''
+      };
+    }
+
+    // Remove flat login properties to avoid duplication
+    delete storyForExport.loginRequired;
+    delete storyForExport.loginUsername;
+    delete storyForExport.loginPassword;
+    delete storyForExport.loginMessage;
+
+    return storyForExport;
+  },
+
   // Export as JSON
   exportStory() {
-    const json = State.exportStory(this.story);
+    const storyForExport = this.normalizeLoginPropertiesForExport(this.story);
+    const json = State.exportStory(storyForExport);
     const filename = `${this.story.title.replace(/\s+/g, '-').toLowerCase()}_${Date.now()}.json`;
     UI.downloadFile(json, filename);
   },
@@ -583,11 +616,14 @@ const app = {
     try {
       UI.showSpinner('Creating bundle...');
 
+      // Normalize login properties for export
+      const storyForExport = this.normalizeLoginPropertiesForExport(this.story);
+
       // Collect assets from artefacts
       const assets = [];
       const assetMap = new Map();
 
-      for (const artefact of this.story.artefacts) {
+      for (const artefact of storyForExport.artefacts) {
         if (artefact.assetPath && this.assetFiles.has(artefact.assetPath)) {
           const file = this.assetFiles.get(artefact.assetPath);
           const assetId = artefact.assetPath.split('/').pop();
@@ -603,9 +639,9 @@ const app = {
       }
 
       // Collect wallpaper asset if present
-      if (this.story.wallpaper && this.assetFiles.has(this.story.wallpaper)) {
-        const file = this.assetFiles.get(this.story.wallpaper);
-        const assetId = this.story.wallpaper.split('/').pop();
+      if (storyForExport.wallpaper && this.assetFiles.has(storyForExport.wallpaper)) {
+        const file = this.assetFiles.get(storyForExport.wallpaper);
+        const assetId = storyForExport.wallpaper.split('/').pop();
 
         if (!assetMap.has(assetId)) {
           assets.push({
@@ -617,7 +653,7 @@ const app = {
       }
 
       // Create bundle
-      const bundleBlob = await StoryBundle.createBundle(this.story, assets);
+      const bundleBlob = await StoryBundle.createBundle(storyForExport, assets);
       const filename = `${this.story.title.replace(/\s+/g, '-').toLowerCase()}_${Date.now()}.story`;
 
       // Download

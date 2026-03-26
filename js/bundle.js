@@ -183,7 +183,11 @@ const StoryBundle = {
       console.log('[Bundle] ✓ Found story data from offset', offset, 'to', storyEnd);
 
       const storyJson = new TextDecoder().decode(uint8Array.slice(offset, storyEnd));
-      const story = JSON.parse(storyJson);
+      let story = JSON.parse(storyJson);
+
+      // Normalize login properties from flat structure to nested object
+      story = this._normalizeLoginProperties(story);
+
       console.log('[Bundle] Story parsed:', {
         id: story.id,
         title: story.title,
@@ -412,6 +416,37 @@ const StoryBundle = {
     });
 
     return normalized;
+  },
+
+  _normalizeLoginProperties(story) {
+    // Transform flat login properties from authoring tool into nested structure
+    // that the player's validation expects
+    if (!story) return story;
+
+    // If story already has the nested login structure, return as-is
+    if (story.login && typeof story.login === 'object') {
+      return story;
+    }
+
+    // If flat login properties exist, transform them into nested structure
+    if (story.loginUsername !== undefined || story.loginPassword !== undefined || story.loginRequired !== undefined) {
+      story.login = {
+        enabled: story.loginRequired || false,
+        username: story.loginUsername || '',
+        password: story.loginPassword || '',
+        message: story.loginMessage || ''
+      };
+    } else {
+      // Default login object if no login properties exist
+      story.login = {
+        enabled: false,
+        username: '',
+        password: '',
+        message: ''
+      };
+    }
+
+    return story;
   },
 
   _fileToArrayBuffer(file) {
