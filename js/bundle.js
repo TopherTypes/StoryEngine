@@ -188,6 +188,9 @@ const StoryBundle = {
       // Normalize login properties from flat structure to nested object
       story = this._normalizeLoginProperties(story);
 
+      // Normalize ending properties from flat structure to nested object
+      story = this._normalizeEndingProperties(story);
+
       console.log('[Bundle] Story parsed:', {
         id: story.id,
         title: story.title,
@@ -443,6 +446,44 @@ const StoryBundle = {
         username: '',
         password: '',
         message: ''
+      };
+    }
+
+    return story;
+  },
+
+  _normalizeEndingProperties(story) {
+    // Transform flat ending properties from authoring tool into nested structure
+    // that the player's validation expects
+    if (!story) return story;
+
+    // If story already has the nested ending structure, return as-is
+    if (story.ending && typeof story.ending === 'object') {
+      return story;
+    }
+
+    // If flat ending properties exist, transform them into nested structure
+    if (story.endingTitle !== undefined || story.endingMessage !== undefined || story.endingCondition !== undefined || story.endingValue !== undefined) {
+      story.ending = {
+        title: story.endingTitle || 'The End',
+        body: story.endingMessage || '',
+        triggerConditions: [
+          {
+            type: story.endingCondition || 'time',
+            value: story.endingValue || '60'
+          }
+        ],
+        allowContinueAfter: false
+      };
+    } else {
+      // Default ending object if no ending properties exist
+      story.ending = {
+        title: 'The End',
+        body: '',
+        triggerConditions: [
+          { type: 'time', value: '60' }
+        ],
+        allowContinueAfter: false
       };
     }
 
