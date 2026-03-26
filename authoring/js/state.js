@@ -252,10 +252,24 @@ const State = {
         }
       }
 
-      if (artefact.type === 'message' && artefact.participantId) {
-        const participant = story.imParticipants.find(p => p.id === artefact.participantId);
-        if (!participant) {
-          issues.push({ type: 'warning', message: `Artefact "${artefact.title}" references non-existent IM participant` });
+      if (artefact.type === 'message') {
+        // Check for required fields
+        if (!artefact.participantId) {
+          issues.push({ type: 'error', message: `IM message "${artefact.title}" is missing required participant` });
+        } else {
+          const participant = story.imParticipants.find(p => p.id === artefact.participantId);
+          if (!participant) {
+            issues.push({ type: 'error', message: `IM message "${artefact.title}" references non-existent participant` });
+          }
+        }
+
+        if (!artefact.conversationId) {
+          issues.push({ type: 'error', message: `IM message "${artefact.title}" is missing required conversation` });
+        } else {
+          const conversation = story.imConversations.find(c => c.id === artefact.conversationId);
+          if (!conversation) {
+            issues.push({ type: 'error', message: `IM message "${artefact.title}" references non-existent conversation` });
+          }
         }
       }
 

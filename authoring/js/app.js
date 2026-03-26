@@ -251,6 +251,70 @@ const app = {
 
       // Update list
       Renderer.renderArtefactList(this.story, document.getElementById('type-filter')?.value);
+
+      // Validate message artifact fields
+      if (artefact.type === 'message') {
+        this.validateMessageFields(artefact);
+      }
+    }
+  },
+
+  // Validate required fields for message artifacts
+  validateMessageFields(artefact) {
+    const errors = {};
+
+    // Check participantId
+    if (!artefact.participantId) {
+      errors.participantId = 'Participant is required';
+    } else {
+      const participantExists = this.story.imParticipants.some(p => p.id === artefact.participantId);
+      if (!participantExists) {
+        errors.participantId = 'Selected participant does not exist';
+      }
+    }
+
+    // Check conversationId
+    if (!artefact.conversationId) {
+      errors.conversationId = 'Conversation is required';
+    } else {
+      const conversationExists = this.story.imConversations.some(c => c.id === artefact.conversationId);
+      if (!conversationExists) {
+        errors.conversationId = 'Selected conversation does not exist';
+      }
+    }
+
+    // Update error display
+    this.displayMessageFieldErrors(errors);
+  },
+
+  // Display error messages for message fields
+  displayMessageFieldErrors(errors) {
+    // Clear all error states
+    const participantError = document.getElementById('participant-error');
+    const conversationError = document.getElementById('conversation-error');
+
+    if (participantError) {
+      if (errors.participantId) {
+        participantError.textContent = errors.participantId;
+        participantError.classList.add('show');
+        document.getElementById('artefact-participant')?.classList.add('has-error');
+      } else {
+        participantError.textContent = '';
+        participantError.classList.remove('show');
+        document.getElementById('artefact-participant')?.classList.remove('has-error');
+      }
+    }
+
+    if (conversationError) {
+      if (errors.conversationId) {
+        conversationError.textContent = errors.conversationId;
+        conversationError.classList.add('show');
+        document.getElementById('artefact-conversation')?.classList.add('has-error');
+      } else {
+        conversationError.textContent = '';
+        conversationError.classList.remove('show');
+        document.getElementById('artefact-conversation')?.classList.remove('has-error');
+      }
     }
   },
 
