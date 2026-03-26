@@ -57,20 +57,41 @@ class Renderer {
 
   // Apply wallpaper to desktop background
   applyWallpaper(wallpaperPath) {
+    console.log('[Renderer] applyWallpaper: Called with path:', wallpaperPath ? wallpaperPath.substring(0, 50) + '...' : '(null)');
+
     const desktopEl = document.getElementById('desktop');
-    if (!desktopEl || !wallpaperPath) {
+    if (!desktopEl) {
+      console.error('[Renderer] applyWallpaper: Desktop element NOT found in DOM');
+      return;
+    }
+    console.log('[Renderer] applyWallpaper: Desktop element found in DOM');
+
+    if (!wallpaperPath) {
+      console.log('[Renderer] applyWallpaper: No wallpaper path provided, skipping wallpaper application');
       return;
     }
 
-    // Clear existing background image
-    desktopEl.style.backgroundImage = '';
+    try {
+      // Clear existing background image
+      desktopEl.style.backgroundImage = '';
+      console.log('[Renderer] applyWallpaper: Cleared previous background image');
 
-    // Apply wallpaper as background
-    desktopEl.style.backgroundImage = `url('${wallpaperPath}')`;
-    desktopEl.style.backgroundSize = 'cover';
-    desktopEl.style.backgroundPosition = 'center';
-    desktopEl.style.backgroundRepeat = 'no-repeat';
-    desktopEl.style.backgroundAttachment = 'fixed';
+      // Apply wallpaper as background
+      desktopEl.style.backgroundImage = `url('${wallpaperPath}')`;
+      desktopEl.style.backgroundSize = 'cover';
+      desktopEl.style.backgroundPosition = 'center';
+      desktopEl.style.backgroundRepeat = 'no-repeat';
+      desktopEl.style.backgroundAttachment = 'fixed';
+
+      console.log('[Renderer] applyWallpaper: CSS properties applied successfully');
+      console.log('[Renderer] applyWallpaper: Current computed background:', {
+        backgroundImage: window.getComputedStyle(desktopEl).backgroundImage,
+        backgroundSize: window.getComputedStyle(desktopEl).backgroundSize,
+        backgroundPosition: window.getComputedStyle(desktopEl).backgroundPosition
+      });
+    } catch (error) {
+      console.error('[Renderer] applyWallpaper: Error applying wallpaper:', error);
+    }
   }
 
   // Set up taskbar buttons
