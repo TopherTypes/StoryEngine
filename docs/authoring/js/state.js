@@ -27,7 +27,7 @@ const State = {
         title: 'The End',
         body: '',
         triggerConditions: [
-          { type: 'time', value: '60' }
+          { type: 'time', minutes: 60 }
         ],
         allowContinueAfter: false
       },
