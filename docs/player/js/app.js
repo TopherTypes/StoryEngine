@@ -87,6 +87,7 @@ class PlayerApp {
         this.story = result.story;
         this.bundleAssets = result.assets;
         console.log('[StoryEngine] Bundle loaded successfully');
+        this.logLoadedStoryStructure('bundle');
         return !!this.story;
       } catch (e) {
         console.error('[StoryEngine] Failed to load bundle from URL:', e);
@@ -100,6 +101,7 @@ class PlayerApp {
       try {
         console.log('[StoryEngine] Loading story from URL:', storyUrl);
         this.story = await loadJSONFromUrl(storyUrl);
+        this.logLoadedStoryStructure('URL');
       } catch (e) {
         console.error('Failed to load story from URL:', e);
       }
@@ -110,6 +112,7 @@ class PlayerApp {
       try {
         console.log('[StoryEngine] Loading story from localStorage');
         this.story = loadStoryFromLocalStorage('storyData');
+        this.logLoadedStoryStructure('localStorage');
       } catch (e) {
         console.error('Failed to load story from localStorage:', e);
       }
@@ -118,25 +121,112 @@ class PlayerApp {
     return !!this.story;
   }
 
+  logLoadedStoryStructure(source) {
+    if (!this.story) return;
+    console.group('[StoryEngine] Loaded Story Structure (from ' + source + ')');
+    console.log('ID:', this.story.id);
+    console.log('Title:', this.story.title);
+    console.log('Author:', this.story.author || '(not set)');
+    console.log('Description:', this.story.description || '(not set)');
+    console.log('Version:', this.story.version || '(not set)');
+    console.log('Login configured:', !!this.story.login, {
+      hasUsername: !!this.story.login?.username,
+      hasPassword: !!this.story.login?.password
+    });
+    console.log('Theme:', this.story.theme || '(not set)');
+    console.log('Artefacts:', this.story.artefacts?.length || 0, 'items');
+    if (this.story.artefacts?.length > 0) {
+      console.log('  - First artefact:', {
+        id: this.story.artefacts[0].id,
+        type: this.story.artefacts[0].type,
+        title: this.story.artefacts[0].title || '(no title)'
+      });
+    }
+    console.log('Email Senders:', this.story.emailSenders?.length || 0, 'items');
+    console.log('IM Participants:', this.story.imParticipants?.length || 0, 'items');
+    console.log('Ending:', this.story.ending ? { title: this.story.ending.title } : '(not set)');
+    console.log('File Structure:', this.story.fileStructure?.length || 0, 'items');
+    console.log('Calendar Events:', this.story.calendarEvents?.length || 0, 'items');
+    console.groupEnd();
+  }
+
   validateStory(story) {
+    console.log('[Validation] Starting story validation...');
+    console.log('[Validation] Story object keys:', Object.keys(story));
+
     // Check required fields
-    if (!story.id || typeof story.id !== 'string') return false;
-    if (!story.title || typeof story.title !== 'string') return false;
-    if (!story.login || !story.login.username || !story.login.password) return false;
+    if (!story.id || typeof story.id !== 'string') {
+      console.error('[Validation] ❌ FAILED: story.id is missing or not a string. Got:', story.id);
+      return false;
+    }
+    console.log('[Validation] ✓ story.id:', story.id);
+
+    if (!story.title || typeof story.title !== 'string') {
+      console.error('[Validation] ❌ FAILED: story.title is missing or not a string. Got:', story.title);
+      return false;
+    }
+    console.log('[Validation] ✓ story.title:', story.title);
+
+    if (!story.login) {
+      console.error('[Validation] ❌ FAILED: story.login is missing. Got:', story.login);
+      return false;
+    }
+    if (!story.login.username) {
+      console.error('[Validation] ❌ FAILED: story.login.username is missing. Got:', story.login.username);
+      return false;
+    }
+    if (!story.login.password) {
+      console.error('[Validation] ❌ FAILED: story.login.password is missing. Got:', story.login.password);
+      return false;
+    }
+    console.log('[Validation] ✓ story.login:', { username: story.login.username ? '(set)' : '(empty)', password: story.login.password ? '(set)' : '(empty)' });
 
     // Check arrays
-    if (!Array.isArray(story.artefacts)) return false;
-    if (!Array.isArray(story.emailSenders)) return false;
-    if (!Array.isArray(story.imParticipants)) return false;
+    if (!Array.isArray(story.artefacts)) {
+      console.error('[Validation] ❌ FAILED: story.artefacts is not an array. Got:', story.artefacts, 'Type:', typeof story.artefacts);
+      return false;
+    }
+    console.log('[Validation] ✓ story.artefacts is array with', story.artefacts.length, 'items');
+
+    if (!Array.isArray(story.emailSenders)) {
+      console.error('[Validation] ❌ FAILED: story.emailSenders is not an array. Got:', story.emailSenders, 'Type:', typeof story.emailSenders);
+      return false;
+    }
+    console.log('[Validation] ✓ story.emailSenders is array with', story.emailSenders.length, 'items');
+
+    if (!Array.isArray(story.imParticipants)) {
+      console.error('[Validation] ❌ FAILED: story.imParticipants is not an array. Got:', story.imParticipants, 'Type:', typeof story.imParticipants);
+      return false;
+    }
+    console.log('[Validation] ✓ story.imParticipants is array with', story.imParticipants.length, 'items');
 
     // Validate artefacts
-    for (const artefact of story.artefacts) {
-      if (!artefact.id || !artefact.type) return false;
+    console.log('[Validation] Validating artefacts...');
+    for (let i = 0; i < story.artefacts.length; i++) {
+      const artefact = story.artefacts[i];
+      if (!artefact.id) {
+        console.error('[Validation] ❌ FAILED: artefact[' + i + '].id is missing. Got:', artefact.id);
+        return false;
+      }
+      if (!artefact.type) {
+        console.error('[Validation] ❌ FAILED: artefact[' + i + '].type is missing. Got:', artefact.type);
+        return false;
+      }
     }
+    console.log('[Validation] ✓ All', story.artefacts.length, 'artefacts have id and type');
 
     // Check ending
-    if (!story.ending || !story.ending.title) return false;
+    if (!story.ending) {
+      console.error('[Validation] ❌ FAILED: story.ending is missing. Got:', story.ending);
+      return false;
+    }
+    if (!story.ending.title) {
+      console.error('[Validation] ❌ FAILED: story.ending.title is missing. Got:', story.ending.title);
+      return false;
+    }
+    console.log('[Validation] ✓ story.ending.title:', story.ending.title);
 
+    console.log('[Validation] ✅ All validation checks passed!');
     return true;
   }
 
