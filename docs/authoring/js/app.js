@@ -703,16 +703,23 @@ const app = {
       }
 
       // Collect wallpaper asset if present
-      if (storyForExport.wallpaper && this.assetFiles.has(storyForExport.wallpaper)) {
-        const file = this.assetFiles.get(storyForExport.wallpaper);
-        const assetId = storyForExport.wallpaper.split('/').pop();
+      if (storyForExport.wallpaper) {
+        console.log('[Export] Checking wallpaper:', storyForExport.wallpaper);
+        console.log('[Export] Wallpaper in assetFiles?', this.assetFiles.has(storyForExport.wallpaper));
+        if (this.assetFiles.has(storyForExport.wallpaper)) {
+          const file = this.assetFiles.get(storyForExport.wallpaper);
+          const assetId = storyForExport.wallpaper.split('/').pop();
 
-        if (!assetMap.has(assetId)) {
-          assets.push({
-            assetId,
-            file
-          });
-          assetMap.set(assetId, true);
+          if (!assetMap.has(assetId)) {
+            assets.push({
+              assetId,
+              file
+            });
+            assetMap.set(assetId, true);
+            console.log('[Export] ✓ Added wallpaper asset:', assetId);
+          }
+        } else {
+          console.log('[Export] ⚠ Wallpaper file not found in assetFiles. Available keys:', Array.from(this.assetFiles.keys()));
         }
       }
 
