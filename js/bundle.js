@@ -110,59 +110,94 @@ const StoryBundle = {
    */
   async parseBundle(bundleBlob) {
     try {
+      console.log('[Bundle] Starting bundle parsing...');
+      console.log('[Bundle] Bundle size:', (bundleBlob.size / 1024).toFixed(2), 'KB');
+
       const buffer = await this._blobToArrayBuffer(bundleBlob);
       const view = new DataView(buffer);
 
       // Verify magic number
+      console.log('[Bundle] Checking magic number...');
       if (!this._verifyMagic(view)) {
         throw new Error('Invalid bundle format: incorrect magic number');
       }
+      console.log('[Bundle] ✓ Magic number valid (STORY)');
 
       // Check version
       const version = view.getUint8(5);
+      console.log('[Bundle] Checking version: expected', this.VERSION, 'got', version);
       if (version !== this.VERSION) {
         throw new Error(`Bundle format version ${version} not supported (expected ${this.VERSION})`);
       }
+      console.log('[Bundle] ✓ Version check passed');
 
       // Check compression flag
       const compressionFlag = view.getUint8(6);
+      const compressionName = compressionFlag === this.COMPRESSION_GZIP ? 'GZIP' : (compressionFlag === this.COMPRESSION_NONE ? 'NONE' : 'UNKNOWN');
+      console.log('[Bundle] Compression flag:', compressionName, '(' + compressionFlag + ')');
       if (compressionFlag !== this.COMPRESSION_NONE && compressionFlag !== this.COMPRESSION_GZIP) {
         throw new Error('Unknown compression format');
       }
+      console.log('[Bundle] ✓ Compression check passed');
 
       // Parse sections
       let offset = this.HEADER_SIZE;
       const uint8Array = new Uint8Array(buffer);
+      console.log('[Bundle] Header size:', this.HEADER_SIZE, 'bytes, starting content parsing at offset', offset);
 
       // Read manifest
+      console.log('[Bundle] Searching for MANIFEST_END marker...');
       const manifestEnd = this._findSeparator(uint8Array, offset, 'MANIFEST_END');
       if (manifestEnd === -1) {
         throw new Error('Bundle corrupted: missing manifest end marker');
       }
+      console.log('[Bundle] ✓ Found manifest at offset', offset, 'to', manifestEnd);
 
       const manifestJson = new TextDecoder().decode(uint8Array.slice(offset, manifestEnd));
       const manifest = JSON.parse(manifestJson);
+      console.log('[Bundle] Manifest parsed:', {
+        bundleVersion: manifest.bundleVersion,
+        storyId: manifest.storyId,
+        storyTitle: manifest.storyTitle,
+        assetCount: Object.keys(manifest.assetHashes || {}).length
+      });
       offset = manifestEnd + 13; // Length of "MANIFEST_END\x00"
 
       // Verify bundle integrity
+      console.log('[Bundle] Verifying bundle integrity (CRC32)...');
       const expectedCrc = this._readCRCFromEnd(uint8Array);
       const contentCrc = this._calculateCRC32(uint8Array.slice(0, uint8Array.length - 4));
+      console.log('[Bundle] CRC32 check: expected 0x' + expectedCrc.toString(16) + ', calculated 0x' + contentCrc.toString(16));
       if (expectedCrc !== contentCrc) {
-        console.warn('Warning: Bundle CRC32 mismatch (file may be corrupted)');
+        console.warn('[Bundle] ⚠ Bundle CRC32 mismatch (file may be corrupted). Expected: 0x' + expectedCrc.toString(16) + ', Got: 0x' + contentCrc.toString(16));
+      } else {
+        console.log('[Bundle] ✓ CRC32 verification passed');
       }
 
       // Read story
+      console.log('[Bundle] Searching for STORY_END marker...');
       const storyEnd = this._findSeparator(uint8Array, offset, 'STORY_END');
       if (storyEnd === -1) {
         throw new Error('Bundle corrupted: missing story end marker');
       }
+      console.log('[Bundle] ✓ Found story data from offset', offset, 'to', storyEnd);
 
       const storyJson = new TextDecoder().decode(uint8Array.slice(offset, storyEnd));
       const story = JSON.parse(storyJson);
+      console.log('[Bundle] Story parsed:', {
+        id: story.id,
+        title: story.title,
+        author: story.author || '(not set)',
+        artefactCount: story.artefacts?.length || 0,
+        emailSenderCount: story.emailSenders?.length || 0,
+        imParticipantCount: story.imParticipants?.length || 0
+      });
       offset = storyEnd + 10; // Length of "STORY_END\x00"
 
       // Read assets
+      console.log('[Bundle] Reading assets, current offset:', offset, 'buffer end:', uint8Array.length - 4);
       const assets = {};
+      let assetCount = 0;
       while (offset < uint8Array.length - 4) { // -4 for CRC32
         const assetBlock = this._readAssetBlock(uint8Array, offset);
         if (!assetBlock) break;
@@ -172,28 +207,39 @@ const StoryBundle = {
           data: assetBlock.data
         };
 
+        console.log('[Bundle] Loaded asset: ' + assetBlock.assetId + ' (' + assetBlock.mimeType + ', ' + (assetBlock.data.byteLength / 1024).toFixed(2) + ' KB)');
+
         offset = assetBlock.nextOffset;
+        assetCount++;
       }
+      console.log('[Bundle] ✓ Loaded', assetCount, 'assets');
 
       // Verify asset hashes if manifest present
       if (manifest.assetHashes) {
+        console.log('[Bundle] Verifying asset hashes (' + Object.keys(manifest.assetHashes).length + ' to verify)...');
         for (const [assetId, hashInfo] of Object.entries(manifest.assetHashes)) {
           if (assets[assetId]) {
             const calculatedHash = await this._calculateSHA256(assets[assetId].data);
             if (calculatedHash !== hashInfo.hash) {
               throw new Error(`Asset ${assetId} is corrupted (hash mismatch)`);
             }
+            console.log('[Bundle] ✓ Asset ' + assetId + ' hash verified');
+          } else {
+            console.warn('[Bundle] ⚠ Manifest references asset ' + assetId + ' but it was not found in bundle');
           }
         }
+        console.log('[Bundle] ✓ All asset hashes verified');
       }
 
+      console.log('[Bundle] ✅ Bundle parsing complete');
       return {
         story,
         assets,
         metadata: manifest
       };
     } catch (error) {
-      console.error('Failed to parse bundle:', error);
+      console.error('[Bundle] ❌ Failed to parse bundle:', error.message);
+      console.error('[Bundle] Error details:', error);
       throw error;
     }
   },
