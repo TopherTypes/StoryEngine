@@ -418,6 +418,14 @@ const StoryBundle = {
       return artefact;
     });
 
+    // Normalize wallpaper asset path to filename only
+    if (normalized.wallpaper && typeof normalized.wallpaper === 'string') {
+      const filename = normalized.wallpaper.split('/').pop();
+      if (assetMap[filename]) {
+        normalized.wallpaper = filename;
+      }
+    }
+
     return normalized;
   },
 
