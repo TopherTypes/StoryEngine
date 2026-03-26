@@ -419,9 +419,9 @@ class Renderer {
 
     Object.entries(conversations).forEach(([convId, msgs]) => {
       const latest = msgs[msgs.length - 1];
-      const participant = this.story.imParticipants.find(p => p.id === latest.senderId);
+      const participant = this.story.imParticipants.find(p => p.id === latest.participantId);
       const unreadCount = msgs.filter(m => !window.playerApp.gameState.currentState.readArtefactIds.has(m.id)).length;
-      const displayName = participant ? (participant.displayName || participant.name) : latest.senderId;
+      const displayName = participant ? (participant.displayName || participant.name) : latest.participantId;
 
       html += `
         <div class="im-conversation-summary" data-conversation-id="${convId}">
@@ -458,8 +458,8 @@ class Renderer {
     const sorted = [...messages].sort((a, b) => a.displayOrder - b.displayOrder);
 
     sorted.forEach(msg => {
-      const participant = this.story.imParticipants.find(p => p.id === msg.senderId);
-      const displayName = participant ? (participant.displayName || participant.name) : msg.senderId;
+      const participant = this.story.imParticipants.find(p => p.id === msg.participantId);
+      const displayName = participant ? (participant.displayName || participant.name) : msg.participantId;
 
       html += `
         <div class="im-message" data-message-id="${msg.id}">

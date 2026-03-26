@@ -472,7 +472,7 @@ class PlayerApp {
     this.gameState.markAppVisited('im');
 
     // Get available IM messages
-    const availableMessages = progressionEngine.getAvailableArtefacts('im');
+    const availableMessages = progressionEngine.getAvailableArtefacts('message');
 
     if (availableMessages.length === 0) {
       const content = this.renderer.renderEmptyState('💬 Messages', 'No messages available yet. Check back later.');
@@ -490,7 +490,7 @@ class PlayerApp {
 
   showIMThread(conversationId) {
     // Get messages for this conversation
-    const availableMessages = progressionEngine.getAvailableArtefacts('im');
+    const availableMessages = progressionEngine.getAvailableArtefacts('message');
     const convMessages = availableMessages.filter(m => m.conversationId === conversationId);
 
     if (convMessages.length === 0) return;
