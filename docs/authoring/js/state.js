@@ -23,10 +23,14 @@ const State = {
       loginPassword: '',
 
       // Ending configuration
-      endingTitle: 'The End',
-      endingMessage: '',
-      endingCondition: 'time',
-      endingValue: '60',
+      ending: {
+        title: 'The End',
+        body: '',
+        triggerConditions: [
+          { type: 'time', value: '60' }
+        ],
+        allowContinueAfter: false
+      },
 
       // World entities
       emailSenders: [],
