@@ -61,8 +61,13 @@ const StoryBundle = {
         assetMap[asset.assetId] = true;
       }
 
+      console.log('[Bundle] Created assetMap with keys:', Object.keys(assetMap));
+      console.log('[Bundle] Story wallpaper before normalization:', story.wallpaper);
+
       // Update story with assetId references (convert from assetPath if needed)
       const processedStory = this._normalizeStoryAssets(story, assetMap);
+
+      console.log('[Bundle] Story wallpaper after normalization:', processedStory.wallpaper);
 
       // Serialize story to JSON
       const storyJson = JSON.stringify(processedStory, null, 2);
@@ -421,8 +426,12 @@ const StoryBundle = {
     // Normalize wallpaper asset path to filename only
     if (normalized.wallpaper && typeof normalized.wallpaper === 'string') {
       const filename = normalized.wallpaper.split('/').pop();
+      console.log('[Bundle] Normalizing wallpaper: input =', normalized.wallpaper, ', extracted filename =', filename, ', in assetMap =', !!assetMap[filename]);
       if (assetMap[filename]) {
         normalized.wallpaper = filename;
+        console.log('[Bundle] ✓ Wallpaper normalized to:', normalized.wallpaper);
+      } else {
+        console.log('[Bundle] ⚠ Wallpaper NOT normalized - filename not found in assetMap. Available keys:', Object.keys(assetMap));
       }
     }
 
