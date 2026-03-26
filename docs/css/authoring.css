@@ -181,6 +181,42 @@ label {
   font-weight: 500;
 }
 
+.required-indicator {
+  color: #ff6b6b;
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+.required-field {
+  border: 1px solid var(--color-border);
+}
+
+.required-field:invalid {
+  border-color: #ff6b6b;
+}
+
+.field-error-message {
+  display: none;
+  color: #ff6b6b;
+  font-size: 12px;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.field-error-message.show {
+  display: block;
+}
+
+.form-group.has-error select,
+.form-group.has-error input[type="text"],
+.form-group.has-error input[type="email"],
+.form-group.has-error input[type="number"],
+.form-group.has-error input[type="password"],
+.form-group.has-error textarea {
+  border-color: #ff6b6b;
+  background-color: rgba(255, 107, 107, 0.05);
+}
+
 input[type="text"],
 input[type="email"],
 input[type="number"],

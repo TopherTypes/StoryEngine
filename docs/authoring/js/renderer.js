@@ -338,6 +338,11 @@ const Renderer = {
         }
       });
     }
+
+    // Validate message artifact fields if applicable
+    if (artefact.type === 'message') {
+      app.validateMessageFields(artefact);
+    }
   },
 
   // Get type-specific form fields
@@ -383,18 +388,20 @@ const Renderer = {
         const conversations = story.imConversations;
         html = `
           <div class="form-group">
-            <label>Participant</label>
-            <select id="artefact-participant" onchange="app.updateCurrentArtefact('participantId', this.value)">
+            <label><span class="required-indicator">*</span> Participant</label>
+            <select id="artefact-participant" class="required-field" onchange="app.updateCurrentArtefact('participantId', this.value)">
               <option value="">-- Select Participant --</option>
               ${participants.map(p => `<option value="${p.id}" ${p.id === artefact.participantId ? 'selected' : ''}>${this.escapeHtml(p.displayName)} (${p.username})</option>`).join('')}
             </select>
+            <span id="participant-error" class="field-error-message"></span>
           </div>
           <div class="form-group">
-            <label>Conversation (Optional)</label>
-            <select id="artefact-conversation" onchange="app.updateCurrentArtefact('conversationId', this.value)">
-              <option value="">-- No Conversation --</option>
+            <label><span class="required-indicator">*</span> Conversation</label>
+            <select id="artefact-conversation" class="required-field" onchange="app.updateCurrentArtefact('conversationId', this.value)">
+              <option value="">-- Select Conversation --</option>
               ${conversations.map(c => `<option value="${c.id}" ${c.id === artefact.conversationId ? 'selected' : ''}>${this.escapeHtml(c.name)}</option>`).join('')}
             </select>
+            <span id="conversation-error" class="field-error-message"></span>
           </div>
           <div class="form-group">
             <label>Message Text</label>
