@@ -266,6 +266,14 @@ class PlayerApp {
     // Initialize progression engine
     progressionEngine = new ProgressionEngine(this.story, this.gameState);
 
+    // Convert wallpaper asset ID to blob URL if needed
+    if (this.story.wallpaper && this.bundleAssets && this.bundleAssets[this.story.wallpaper]) {
+      const wallpaperUrl = this.getAssetData(this.story.wallpaper);
+      if (wallpaperUrl) {
+        this.story.wallpaper = wallpaperUrl;
+      }
+    }
+
     // Show desktop
     this.renderer.showDesktop(this.gameState);
     this.setupDesktopHandlers();
@@ -285,6 +293,16 @@ class PlayerApp {
       // Show desktop
       this.renderer = new Renderer(this.story);
       console.log('[StoryEngine] continueGame: Renderer created');
+
+      // Convert wallpaper asset ID to blob URL if needed
+      if (this.story.wallpaper && this.bundleAssets && this.bundleAssets[this.story.wallpaper]) {
+        console.log('[StoryEngine] continueGame: Converting wallpaper asset to blob URL...');
+        const wallpaperUrl = this.getAssetData(this.story.wallpaper);
+        if (wallpaperUrl) {
+          this.story.wallpaper = wallpaperUrl;
+          console.log('[StoryEngine] continueGame: Wallpaper converted to blob URL');
+        }
+      }
 
       console.log('[StoryEngine] continueGame: Showing desktop...');
       this.renderer.showDesktop(this.gameState);
