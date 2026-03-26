@@ -267,11 +267,23 @@ class PlayerApp {
     progressionEngine = new ProgressionEngine(this.story, this.gameState);
 
     // Convert wallpaper asset ID to blob URL if needed
-    if (this.story.wallpaper && this.bundleAssets && this.bundleAssets[this.story.wallpaper]) {
-      const wallpaperUrl = this.getAssetData(this.story.wallpaper);
-      if (wallpaperUrl) {
-        this.story.wallpaper = wallpaperUrl;
+    console.log('[StoryEngine] startNewGame: Wallpaper status - ID:', this.story.wallpaper ? this.story.wallpaper : '(none)');
+    if (this.story.wallpaper) {
+      console.log('[StoryEngine] startNewGame: Checking if wallpaper asset exists in bundle...');
+      if (this.bundleAssets && this.bundleAssets[this.story.wallpaper]) {
+        console.log('[StoryEngine] startNewGame: Wallpaper asset found, converting to blob URL...');
+        const wallpaperUrl = this.getAssetData(this.story.wallpaper);
+        if (wallpaperUrl) {
+          console.log('[StoryEngine] startNewGame: Wallpaper successfully converted to blob URL');
+          this.story.wallpaper = wallpaperUrl;
+        } else {
+          console.error('[StoryEngine] startNewGame: Failed to convert wallpaper asset to blob URL');
+        }
+      } else {
+        console.warn('[StoryEngine] startNewGame: Wallpaper asset NOT found in bundle. Asset ID:', this.story.wallpaper);
       }
+    } else {
+      console.log('[StoryEngine] startNewGame: No wallpaper configured for this story');
     }
 
     // Show desktop
@@ -295,13 +307,23 @@ class PlayerApp {
       console.log('[StoryEngine] continueGame: Renderer created');
 
       // Convert wallpaper asset ID to blob URL if needed
-      if (this.story.wallpaper && this.bundleAssets && this.bundleAssets[this.story.wallpaper]) {
-        console.log('[StoryEngine] continueGame: Converting wallpaper asset to blob URL...');
-        const wallpaperUrl = this.getAssetData(this.story.wallpaper);
-        if (wallpaperUrl) {
-          this.story.wallpaper = wallpaperUrl;
-          console.log('[StoryEngine] continueGame: Wallpaper converted to blob URL');
+      console.log('[StoryEngine] continueGame: Wallpaper status - ID:', this.story.wallpaper ? this.story.wallpaper : '(none)');
+      if (this.story.wallpaper) {
+        console.log('[StoryEngine] continueGame: Checking if wallpaper asset exists in bundle...');
+        if (this.bundleAssets && this.bundleAssets[this.story.wallpaper]) {
+          console.log('[StoryEngine] continueGame: Wallpaper asset found, converting to blob URL...');
+          const wallpaperUrl = this.getAssetData(this.story.wallpaper);
+          if (wallpaperUrl) {
+            console.log('[StoryEngine] continueGame: Wallpaper successfully converted to blob URL:', wallpaperUrl.substring(0, 50) + '...');
+            this.story.wallpaper = wallpaperUrl;
+          } else {
+            console.error('[StoryEngine] continueGame: Failed to convert wallpaper asset to blob URL');
+          }
+        } else {
+          console.warn('[StoryEngine] continueGame: Wallpaper asset NOT found in bundle. Asset ID:', this.story.wallpaper);
         }
+      } else {
+        console.log('[StoryEngine] continueGame: No wallpaper configured for this story');
       }
 
       console.log('[StoryEngine] continueGame: Showing desktop...');
@@ -1112,13 +1134,34 @@ class PlayerApp {
 
   // Get asset data from bundle assets
   getAssetData(assetId) {
-    if (this.bundleAssets && this.bundleAssets[assetId]) {
-      const asset = this.bundleAssets[assetId];
-      // Convert to data URL for display
-      const blob = new Blob([asset.data], { type: asset.mimeType });
-      return URL.createObjectURL(blob);
+    console.log('[StoryEngine] getAssetData: Requesting asset ID:', assetId);
+
+    if (!this.bundleAssets) {
+      console.error('[StoryEngine] getAssetData: bundleAssets is null or undefined');
+      return null;
     }
-    return null;
+
+    if (!this.bundleAssets[assetId]) {
+      console.error('[StoryEngine] getAssetData: Asset not found in bundle. Available asset IDs:', Object.keys(this.bundleAssets));
+      return null;
+    }
+
+    try {
+      const asset = this.bundleAssets[assetId];
+      console.log('[StoryEngine] getAssetData: Asset found - MimeType:', asset.mimeType, 'Data size:', asset.data.length, 'bytes');
+
+      // Convert to blob URL for display
+      const blob = new Blob([asset.data], { type: asset.mimeType });
+      console.log('[StoryEngine] getAssetData: Blob created - Size:', blob.size, 'bytes, Type:', blob.type);
+
+      const blobUrl = URL.createObjectURL(blob);
+      console.log('[StoryEngine] getAssetData: Blob URL created successfully:', blobUrl);
+
+      return blobUrl;
+    } catch (error) {
+      console.error('[StoryEngine] getAssetData: Error converting asset to blob URL:', error);
+      return null;
+    }
   }
 }
 
