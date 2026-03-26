@@ -191,7 +191,7 @@ class Renderer {
       // Update z-index
       let maxZ = 1000;
       this.openWindows.forEach(w => {
-        const z = parseInt(window.getComputedStyle(w.element).zIndex) || 0;
+        const z = parseInt(globalThis.getComputedStyle(w.element).zIndex) || 0;
         maxZ = Math.max(maxZ, z);
       });
       window.element.style.zIndex = maxZ + 1;
