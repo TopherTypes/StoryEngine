@@ -69,8 +69,11 @@ const StoryBundle = {
 
       console.log('[Bundle] Story wallpaper after normalization:', processedStory.wallpaper);
 
+      // Normalize ending properties to ensure correct field names
+      const normalizedStory = this._normalizeEndingProperties(processedStory);
+
       // Serialize story to JSON
-      const storyJson = JSON.stringify(processedStory, null, 2);
+      const storyJson = JSON.stringify(normalizedStory, null, 2);
       const storyBuffer = new TextEncoder().encode(storyJson);
 
       // Build bundle content
@@ -474,20 +477,34 @@ const StoryBundle = {
     // that the player's validation expects
     if (!story) return story;
 
-    // If story already has the nested ending structure, return as-is
+    // If story already has the nested ending structure, convert field names if needed
     if (story.ending && typeof story.ending === 'object') {
+      // Convert old 'value' field to 'minutes' for time rules in triggerConditions
+      if (story.ending.triggerConditions && Array.isArray(story.ending.triggerConditions)) {
+        story.ending.triggerConditions = story.ending.triggerConditions.map(rule => {
+          if (rule.type === 'time' && rule.value !== undefined && rule.minutes === undefined) {
+            const minutes = parseInt(rule.value, 10);
+            return {
+              ...rule,
+              minutes: isNaN(minutes) ? 60 : minutes
+            };
+          }
+          return rule;
+        });
+      }
       return story;
     }
 
     // If flat ending properties exist, transform them into nested structure
     if (story.endingTitle !== undefined || story.endingMessage !== undefined || story.endingCondition !== undefined || story.endingValue !== undefined) {
+      const endingValue = parseInt(story.endingValue || '60', 10);
       story.ending = {
         title: story.endingTitle || 'The End',
         body: story.endingMessage || '',
         triggerConditions: [
           {
             type: story.endingCondition || 'time',
-            value: story.endingValue || '60'
+            minutes: isNaN(endingValue) ? 60 : endingValue
           }
         ],
         allowContinueAfter: false
@@ -498,7 +515,7 @@ const StoryBundle = {
         title: 'The End',
         body: '',
         triggerConditions: [
-          { type: 'time', value: '60' }
+          { type: 'time', minutes: 60 }
         ],
         allowContinueAfter: false
       };
