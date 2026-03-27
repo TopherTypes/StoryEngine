@@ -31,6 +31,12 @@
   --color-focus: #f76707;
   --color-disabled: #555555;
 
+  /* IM Messaging Colors */
+  --color-im-message-incoming: #2a2a2a;
+  --color-im-message-outgoing: #005a33;
+  --color-im-timestamp: #808080;
+  --color-im-online-status: #4dd0e1;
+
   /* ========== TYPOGRAPHY ========== */
   --font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
   --font-family-mono: 'SF Mono', 'Monaco', 'Menlo', monospace;
