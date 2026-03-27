@@ -68,6 +68,28 @@ const app = {
     }
   },
 
+  // Update a nested global setting field (e.g., "globalSettings.playerProfile.name")
+  updateGlobalSetting(path, value) {
+    if (!this.story) return;
+
+    // Parse the path and set the value
+    const parts = path.split('.');
+    let obj = this.story;
+
+    // Navigate to the parent object
+    for (let i = 0; i < parts.length - 1; i++) {
+      if (!obj[parts[i]]) {
+        obj[parts[i]] = {};
+      }
+      obj = obj[parts[i]];
+    }
+
+    // Set the final value
+    obj[parts[parts.length - 1]] = value;
+    this.story.lastModified = new Date().toISOString();
+    this.saveStory();
+  },
+
   // Auto-save periodically
   setupAutoSave() {
     setInterval(() => {
@@ -189,6 +211,11 @@ const app = {
     // Update timeline when going there
     if (sectionName === 'timeline') {
       Renderer.renderTimeline(this.story);
+    }
+
+    // Update settings fields when going to settings
+    if (sectionName === 'settings') {
+      Renderer.updateGlobalSettingsFields(this.story);
     }
 
     UI.goToSection(sectionName);

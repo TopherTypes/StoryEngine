@@ -108,6 +108,7 @@
             <button class="tab-button" data-tab="theme">Theme</button>
             <button class="tab-button" data-tab="login">Login</button>
             <button class="tab-button" data-tab="ending">Ending</button>
+            <button class="tab-button" data-tab="game-time">Game Time</button>
           </div>
 
           <!-- Metadata Tab -->
@@ -219,6 +220,53 @@
             <div class="form-group">
               <label>Ending Value</label>
               <input type="text" id="settings-ending-value" placeholder="Minutes, artefact ID, etc.">
+            </div>
+          </div>
+
+          <!-- Game Time Tab -->
+          <div class="tab-content" data-tab="game-time">
+            <div class="world-section">
+              <h3>Game Time Settings</h3>
+              <p style="color: var(--text-secondary); font-size: 11px; margin-bottom: 16px;">Configure when the game starts and how messages are revealed based on game time.</p>
+
+              <div class="form-group">
+                <label>Story Start Date & Time</label>
+                <input type="text" id="settings-story-start-datetime" placeholder="e.g. 2026-03-15 09:00" title="Format: YYYY-MM-DD HH:MM">
+                <p style="color: var(--text-secondary); font-size: 11px; margin-top: 6px;">When does the story begin? This is the reference point for message reveal times.</p>
+              </div>
+
+              <div class="form-group">
+                <label>Timezone</label>
+                <select id="settings-timezone">
+                  <option value="UTC">UTC</option>
+                  <option value="America/New_York">America/New_York (EST/EDT)</option>
+                  <option value="America/Chicago">America/Chicago (CST/CDT)</option>
+                  <option value="America/Denver">America/Denver (MST/MDT)</option>
+                  <option value="America/Los_Angeles">America/Los_Angeles (PST/PDT)</option>
+                  <option value="Europe/London">Europe/London (GMT/BST)</option>
+                  <option value="Europe/Paris">Europe/Paris (CET/CEST)</option>
+                  <option value="Asia/Tokyo">Asia/Tokyo (JST)</option>
+                  <option value="Asia/Shanghai">Asia/Shanghai (CST)</option>
+                  <option value="Australia/Sydney">Australia/Sydney (AEDT/AEST)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="world-section">
+              <h3>Player Profile</h3>
+              <p style="color: var(--text-secondary); font-size: 11px; margin-bottom: 16px;">Information about the player shown in conversations and email threads.</p>
+
+              <div class="form-group">
+                <label>Player Name</label>
+                <input type="text" id="settings-player-name" placeholder="e.g. Player, Alex, You">
+                <p style="color: var(--text-secondary); font-size: 11px; margin-top: 6px;">How the player appears in email chains and conversations.</p>
+              </div>
+
+              <div class="form-group">
+                <label>Player Email</label>
+                <input type="email" id="settings-player-email" placeholder="e.g. player@email.com">
+                <p style="color: var(--text-secondary); font-size: 11px; margin-top: 6px;">Email address shown in email threads and headers.</p>
+              </div>
             </div>
           </div>
         </section>

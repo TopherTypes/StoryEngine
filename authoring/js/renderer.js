@@ -343,6 +343,30 @@ const Renderer = {
     if (artefact.type === 'message') {
       app.validateMessageFields(artefact);
     }
+
+    // Initialize markdown editor for email and message types
+    if (artefact.type === 'email' || artefact.type === 'message') {
+      setTimeout(() => {
+        const containerId = artefact.type === 'email' ? 'email-editor-container' : 'message-editor-container';
+        const container = document.getElementById(containerId);
+
+        if (container) {
+          const editor = new ConversationMarkdownEditor({
+            type: artefact.type,
+            initialMarkdown: artefact.markdownContent || '',
+            story: story,
+            onSave: (markdown) => {
+              app.updateCurrentArtefact('markdownContent', markdown);
+              app.showToast(`✓ ${artefact.type === 'email' ? 'Email' : 'Conversation'} saved`);
+            },
+            onCancel: () => {
+              // No action needed for cancel
+            }
+          });
+          editor.render(container);
+        }
+      }, 0);
+    }
   },
 
   // Get type-specific form fields
@@ -351,66 +375,20 @@ const Renderer = {
 
     switch (artefact.type) {
       case 'email':
-        const senders = story.emailSenders;
-        const threads = story.emailThreads;
+        // Use markdown editor for new conversation format
         html = `
-          <div class="form-group">
-            <label>From (Sender)</label>
-            <select id="artefact-sender" onchange="app.updateCurrentArtefact('senderId', this.value)">
-              <option value="">-- Select Sender --</option>
-              ${senders.map(s => `<option value="${s.id}" ${s.id === artefact.senderId ? 'selected' : ''}>${this.escapeHtml(s.name)} (${s.email})</option>`).join('')}
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Thread (Optional)</label>
-            <select id="artefact-thread" onchange="app.updateCurrentArtefact('threadId', this.value)">
-              <option value="">-- No Thread --</option>
-              ${threads.map(t => `<option value="${t.id}" ${t.id === artefact.threadId ? 'selected' : ''}>${this.escapeHtml(t.name)}</option>`).join('')}
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Subject</label>
-            <input type="text" id="artefact-subject" value="${this.escapeHtml(artefact.subject)}" onchange="app.updateCurrentArtefact('subject', this.value)">
-          </div>
-          <div class="form-group">
-            <label>Recipients (comma-separated emails)</label>
-            <input type="text" id="artefact-recipients" value="${artefact.recipients?.join(', ') || ''}" placeholder="e.g., player@test.com, other@test.com" onchange="app.updateCurrentArtefact('recipients', this.value.split(',').map(e => e.trim()).filter(e => e))">
-          </div>
-          <div class="form-group">
-            <label>Body</label>
-            <textarea id="artefact-body" onchange="app.updateCurrentArtefact('body', this.value)">${this.escapeHtml(artefact.body)}</textarea>
-          </div>
+          <div id="email-editor-container" style="height: 600px; border: 1px solid var(--border-color); border-radius: 4px; margin-bottom: 20px;"></div>
+          <input type="hidden" id="artefact-markdown-content" value="${this.escapeHtml(artefact.markdownContent || '')}">
+          <input type="hidden" id="artefact-reveal-time" value="${artefact.revealTime || ''}">
         `;
         break;
 
       case 'message':
-        const participants = story.imParticipants;
-        const conversations = story.imConversations;
+        // Use markdown editor for new conversation format
         html = `
-          <div class="form-group">
-            <label><span class="required-indicator">*</span> Participant</label>
-            <select id="artefact-participant" class="required-field" onchange="app.updateCurrentArtefact('participantId', this.value)">
-              <option value="">-- Select Participant --</option>
-              ${participants.map(p => `<option value="${p.id}" ${p.id === artefact.participantId ? 'selected' : ''}>${this.escapeHtml(p.displayName)} (${p.username})</option>`).join('')}
-            </select>
-            <span id="participant-error" class="field-error-message"></span>
-          </div>
-          <div class="form-group">
-            <label><span class="required-indicator">*</span> Conversation</label>
-            <select id="artefact-conversation" class="required-field" onchange="app.updateCurrentArtefact('conversationId', this.value)">
-              <option value="">-- Select Conversation --</option>
-              ${conversations.map(c => `<option value="${c.id}" ${c.id === artefact.conversationId ? 'selected' : ''}>${this.escapeHtml(c.name)}</option>`).join('')}
-            </select>
-            <span id="conversation-error" class="field-error-message"></span>
-          </div>
-          <div class="form-group">
-            <label>Message Text</label>
-            <textarea id="artefact-message-body" onchange="app.updateCurrentArtefact('body', this.value)">${this.escapeHtml(artefact.body)}</textarea>
-          </div>
-          <div class="form-group">
-            <label>Sender Is Player?</label>
-            <input type="checkbox" id="artefact-sender-is-player" ${artefact.senderIsPlayer ? 'checked' : ''} onchange="app.updateCurrentArtefact('senderIsPlayer', this.checked)">
-          </div>
+          <div id="message-editor-container" style="height: 600px; border: 1px solid var(--border-color); border-radius: 4px; margin-bottom: 20px;"></div>
+          <input type="hidden" id="artefact-markdown-content" value="${this.escapeHtml(artefact.markdownContent || '')}">
+          <input type="hidden" id="artefact-reveal-time" value="${artefact.revealTime || ''}">
         `;
         break;
 
@@ -629,6 +607,27 @@ const Renderer = {
     if (checkbox && fields) {
       fields.style.display = checkbox.checked ? 'block' : 'none';
     }
+  },
+
+  // Update global settings form fields from story data
+  updateGlobalSettingsFields(story) {
+    const settings = story.globalSettings || {};
+    const playerProfile = settings.playerProfile || {};
+
+    // Update each field
+    const fieldUpdates = [
+      { id: 'settings-story-start-datetime', value: settings.storyStartDateTime || '' },
+      { id: 'settings-timezone', value: settings.timeZone || 'UTC' },
+      { id: 'settings-player-name', value: playerProfile.name || 'Player' },
+      { id: 'settings-player-email', value: playerProfile.email || 'player@email.com' }
+    ];
+
+    fieldUpdates.forEach(({ id, value }) => {
+      const element = document.getElementById(id);
+      if (element) {
+        element.value = value;
+      }
+    });
   },
 
   // Format a single condition for human readability
