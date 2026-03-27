@@ -3,8 +3,10 @@
  */
 
 class Renderer {
-  constructor(story) {
+  constructor(story, globalSettings = {}, gameState = null) {
     this.story = story;
+    this.globalSettings = globalSettings || {};
+    this.gameState = gameState;
     this.openWindows = new Map();
     this.focusedWindow = null;
     this.isFullscreen = false;
@@ -342,13 +344,28 @@ class Renderer {
 
   // Render email thread
   renderEmailThread(threadId, emails) {
+    // Find the main email artefact (should be one with markdownContent for new format)
+    const emailArtefact = emails.find(e => e.markdownContent);
+
+    if (emailArtefact && emailArtefact.markdownContent) {
+      // New markdown-based email thread format
+      const parser = new ConversationParser(emailArtefact, this.story, this.globalSettings);
+      parser.parseMarkdown();
+      const messages = parser.getMessages();
+
+      // Use new MessageRenderer
+      const renderer = new MessageRenderer(messages, this.story, this.globalSettings, { elapsedMinutes: this.gameState?.getElapsedMinutes() || 0 });
+      return renderer.renderConversation('email');
+    }
+
+    // Fallback to legacy email rendering
     let html = '<div class="email-thread">';
 
     // Sort emails chronologically
     const sorted = [...emails].sort((a, b) => (a.timestamp || '') < (b.timestamp || '') ? -1 : 1);
 
     sorted.forEach(email => {
-      const sender = this.story.emailSenders.find(s => s.id === email.sender);
+      const sender = this.story.emailSenders.find(s => s.id === email.senderId || s.id === email.sender);
       html += `
         <div class="email-message" data-email-id="${email.id}">
           <div class="email-header">
@@ -452,6 +469,21 @@ class Renderer {
 
   // Render IM conversation thread
   renderIMThread(conversationId, messages) {
+    // Find the main message artefact (should be one with markdownContent for new format)
+    const messageArtefact = messages.find(m => m.markdownContent);
+
+    if (messageArtefact && messageArtefact.markdownContent) {
+      // New markdown-based IM conversation format
+      const parser = new ConversationParser(messageArtefact, this.story, this.globalSettings);
+      parser.parseMarkdown();
+      const parsedMessages = parser.getMessages();
+
+      // Use new MessageRenderer
+      const renderer = new MessageRenderer(parsedMessages, this.story, this.globalSettings, { elapsedMinutes: this.gameState?.getElapsedMinutes() || 0 });
+      return renderer.renderConversation('message');
+    }
+
+    // Fallback to legacy IM rendering
     let html = '<div class="im-thread">';
 
     // Sort by display order

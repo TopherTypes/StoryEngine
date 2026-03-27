@@ -41,6 +41,16 @@ const State = {
       calendarOwner: '',
       calendarStartDate: '',
 
+      // Global settings for conversations and time system
+      globalSettings: {
+        storyStartDateTime: '',  // ISO format: "2026-03-15 09:00"
+        timeZone: 'UTC',
+        playerProfile: {
+          name: 'Player',
+          email: 'player@email.com'
+        }
+      },
+
       // Story content
       artefacts: [],
 
@@ -109,6 +119,10 @@ const State = {
       case 'email':
         return {
           ...baseArtefact,
+          // New markdown-based conversation format
+          markdownContent: '',
+          revealTime: '',
+          // Legacy single-email fields (for backward compatibility)
           senderId: '',
           subject: '',
           recipients: [],
@@ -119,6 +133,10 @@ const State = {
       case 'message':
         return {
           ...baseArtefact,
+          // New markdown-based conversation format
+          markdownContent: '',
+          revealTime: '',
+          // Legacy single-message fields (for backward compatibility)
           participantId: '',
           conversationId: '',
           senderIsPlayer: false,

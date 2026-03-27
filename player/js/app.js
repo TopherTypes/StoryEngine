@@ -18,6 +18,9 @@ class PlayerApp {
     try {
       console.log('[StoryEngine] App initialization starting');
 
+      // Inject message renderer styles
+      MessageRenderer.injectStyles();
+
       // Initialize state management
       console.log('[StoryEngine] Initializing player state...');
       await playerState.init();
@@ -65,7 +68,8 @@ class PlayerApp {
       } else {
         // Show login screen for new game
         console.log('[StoryEngine] Showing login screen for new game');
-        this.renderer = new Renderer(this.story);
+        const globalSettings = this.story.globalSettings || {};
+        this.renderer = new Renderer(this.story, globalSettings, this.gameState);
         this.renderer.showLoginScreen();
         this.setupLoginHandler();
       }
@@ -303,7 +307,8 @@ class PlayerApp {
 
       console.log('[StoryEngine] continueGame: Creating renderer...');
       // Show desktop
-      this.renderer = new Renderer(this.story);
+      const globalSettings = this.story.globalSettings || {};
+      this.renderer = new Renderer(this.story, globalSettings, this.gameState);
       console.log('[StoryEngine] continueGame: Renderer created');
 
       // Convert wallpaper asset ID to blob URL if needed
@@ -801,7 +806,7 @@ class PlayerApp {
   async showStorySelector() {
     // Initialize renderer if needed
     if (!this.renderer) {
-      this.renderer = new Renderer({});
+      this.renderer = new Renderer({}, {}, this.gameState);
     }
 
     // Show selector screen
@@ -841,7 +846,8 @@ class PlayerApp {
             this.gameState = playerState;
             this.continueGame();
           } else {
-            this.renderer = new Renderer(this.story);
+            const globalSettings = this.story.globalSettings || {};
+            this.renderer = new Renderer(this.story, globalSettings, this.gameState);
             this.renderer.showLoginScreen();
             this.setupLoginHandler();
           }
