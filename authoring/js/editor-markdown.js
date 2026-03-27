@@ -121,17 +121,17 @@ class ConversationMarkdownEditor {
 
     // Parse and render preview
     const playerProfile = this.story.globalSettings?.playerProfile || {};
-    const messages = ConversationMarkdown.parseMarkdown(markdown, this.type, playerProfile);
+    this.lastMessages = ConversationMarkdown.parseMarkdown(markdown, this.type, playerProfile);
 
     // Render messages
     this.previewPanel.innerHTML = '';
 
-    if (messages.length === 0) {
+    if (this.lastMessages.length === 0) {
       this.previewPanel.innerHTML = '<div class="preview-empty">No messages yet</div>';
       return;
     }
 
-    messages.forEach((msg, index) => {
+    this.lastMessages.forEach((msg, index) => {
       const messageEl = this._createMessagePreview(msg, index);
       this.previewPanel.appendChild(messageEl);
     });
@@ -159,7 +159,7 @@ class ConversationMarkdownEditor {
 
     // Build subject if email
     let subjectHtml = '';
-    if (msg.subject && (index === 0 || msg.subject !== messages[index - 1]?.subject)) {
+    if (msg.subject && (index === 0 || msg.subject !== this.lastMessages[index - 1]?.subject)) {
       subjectHtml = `<div class="msg-subject">Subject: ${this._escapeHtml(msg.subject)}</div>`;
     }
 
