@@ -86,7 +86,7 @@ const Renderer = {
     if (settingsThemeEl) settingsThemeEl.value = story.theme;
 
     const settingsWallpaperEl = document.getElementById('settings-wallpaper');
-    if (settingsWallpaperEl) settingsWallpaperEl.value = story.wallpaper;
+    if (settingsWallpaperEl && settingsWallpaperEl.type !== 'file') settingsWallpaperEl.value = story.wallpaper;
 
     // Update login section
     const loginRequiredEl = document.getElementById('settings-login-required');
