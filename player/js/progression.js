@@ -30,7 +30,18 @@ class ProgressionEngine {
       return true;
     }
 
-    // Check time-based release
+    // Check new revealTime format (absolute game timestamp)
+    if (artefact.revealTime) {
+      const storyStart = this.story.globalSettings?.storyStartDateTime;
+      if (storyStart) {
+        const revealMinutes = this._calculateMinutesFromStart(storyStart, artefact.revealTime);
+        if (revealMinutes !== null && elapsedMinutes < revealMinutes) {
+          return false;
+        }
+      }
+    }
+
+    // Check legacy releaseAtTime format (minutes from start)
     if (artefact.releaseAtTime !== null && artefact.releaseAtTime !== undefined) {
       if (elapsedMinutes < artefact.releaseAtTime) {
         return false;
@@ -48,6 +59,33 @@ class ProgressionEngine {
 
     // No release conditions, always available
     return true;
+  }
+
+  // Helper: Calculate minutes from game start to a target datetime
+  _calculateMinutesFromStart(storyStartDateTime, targetDateTime) {
+    if (!storyStartDateTime || !targetDateTime) return null;
+
+    try {
+      const startDate = this._parseDateTime(storyStartDateTime);
+      const targetDate = this._parseDateTime(targetDateTime);
+
+      if (!startDate || !targetDate) return null;
+
+      const deltaMs = targetDate - startDate;
+      return Math.floor(deltaMs / (1000 * 60));
+    } catch (e) {
+      console.error('Error calculating time delta:', e);
+      return null;
+    }
+  }
+
+  // Helper: Parse datetime string
+  _parseDateTime(dateTimeString) {
+    if (!dateTimeString) return null;
+
+    // Try parsing with space separator
+    const date = new Date(dateTimeString.replace(' ', 'T') + ':00Z');
+    return isNaN(date.getTime()) ? null : date;
   }
 
   // Evaluate a release rule
