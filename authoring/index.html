@@ -88,6 +88,16 @@
             </div>
           </div>
 
+          <div class="dashboard-card">
+            <h3>Story Management</h3>
+            <p style="color: var(--text-secondary); font-size: 11px; margin-bottom: 12px;">Create a new story or load an existing one from file</p>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <button onclick="app.createNewStory()">📄 New Story</button>
+              <button class="secondary" onclick="document.getElementById('story-file-input').click()">📂 Load Story from File</button>
+              <input type="file" id="story-file-input" accept=".json,.story" style="display: none;" onchange="app.handleLoadStoryFile(event)">
+            </div>
+          </div>
+
           <div style="margin-top: 20px;">
             <h3 style="color: var(--terminal-amber); font-size: 12px; text-transform: uppercase;">Quick Actions</h3>
             <div style="display: flex; gap: 10px; margin-top: 12px;">
