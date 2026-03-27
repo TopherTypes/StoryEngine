@@ -146,7 +146,7 @@ class Renderer {
   createWindow(title, appName, content) {
     const windowId = generateId();
     const windowEl = document.createElement('div');
-    windowEl.className = 'window';
+    windowEl.className = `window ${appName}`;
     windowEl.id = `window-${windowId}`;
     windowEl.innerHTML = `
       <div class="window-header" data-window-id="${windowId}">
@@ -421,9 +421,45 @@ class Renderer {
     return `<div class="im-avatar im-avatar-initials">${initials}</div>`;
   }
 
+  getAvatarHTMLContent(participant) {
+    if (!participant) {
+      return '<div class="im-avatar-initials">?</div>';
+    }
+
+    if (participant.profilePicture) {
+      return `<img src="${participant.profilePicture}" alt="Avatar">`;
+    }
+
+    // Generate initials fallback
+    const displayName = participant.displayName || participant.name || '?';
+    const initials = displayName
+      .split(' ')
+      .map(word => word[0])
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
+
+    return `<div class="im-avatar-initials">${initials}</div>`;
+  }
+
+  escapeHTML(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  formatIMTime(timestamp) {
+    if (!timestamp) return '';
+    // For now, just return the timestamp as-is
+    // Could be enhanced to show relative time
+    return timestamp;
+  }
+
   // Render IM conversations list
   renderIMConversations(messages, onSelectConversation) {
     let html = '<div class="im-list">';
+    html += '<div class="im-list-header">Conversations</div>';
 
     // Group by conversation
     const conversations = {};
@@ -442,11 +478,16 @@ class Renderer {
 
       html += `
         <div class="im-conversation-summary" data-conversation-id="${convId}">
-          <div class="conv-header">
-            ${this.getAvatarHTML(participant)}
-            <div class="conv-name">${displayName}</div>
+          <div class="conv-avatar">
+            ${this.getAvatarHTMLContent(participant)}
           </div>
-          <div class="conv-preview">${latest.body.substring(0, 50)}...</div>
+          <div class="conv-content">
+            <div class="conv-header">
+              <div class="conv-name">${displayName}</div>
+              <div class="conv-time">${this.formatIMTime(latest.timestamp)}</div>
+            </div>
+            <div class="conv-preview">${this.escapeHTML(latest.body.substring(0, 50))}${latest.body.length > 50 ? '...' : ''}</div>
+          </div>
           ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
         </div>
       `;
@@ -469,6 +510,37 @@ class Renderer {
 
   // Render IM conversation thread
   renderIMThread(conversationId, messages) {
+    // Find the first message to get participant info for header
+    const firstMessage = messages[0];
+    const participant = this.story.imParticipants.find(p => p.id === firstMessage?.participantId);
+    const displayName = participant ? (participant.displayName || participant.name) : firstMessage?.participantId || 'Unknown';
+    const isOnline = participant?.isOnline !== false; // Default to online
+
+    let html = '<div style="display: flex; flex-direction: column; height: 100%; width: 100%;">';
+
+    // Render thread header
+    html += `
+      <div class="im-thread-header">
+        <div class="im-header-info">
+          <div class="im-header-avatar">
+            ${this.getAvatarHTMLContent(participant)}
+          </div>
+          <div class="im-header-text">
+            <div class="im-header-name">${this.escapeHTML(displayName)}</div>
+            <div class="im-status-indicator">
+              <div class="im-status-dot ${isOnline ? '' : 'offline'}"></div>
+              <span>${isOnline ? 'online' : 'offline'}</span>
+            </div>
+          </div>
+        </div>
+        <div class="im-header-actions">
+          <button class="im-header-btn" title="Call">☎️</button>
+          <button class="im-header-btn" title="Video Call">📹</button>
+          <button class="im-header-btn" title="More">⋮</button>
+        </div>
+      </div>
+    `;
+
     // Find the main message artefact (should be one with markdownContent for new format)
     const messageArtefact = messages.find(m => m.markdownContent);
 
@@ -479,50 +551,73 @@ class Renderer {
       const parsedMessages = parser.getMessages();
 
       // Use new MessageRenderer
-      const renderer = new MessageRenderer(parsedMessages, this.story, this.globalSettings, { elapsedMinutes: this.gameState?.getElapsedMinutes() || 0 });
-      return renderer.renderConversation('message');
-    }
+      const msgRenderer = new MessageRenderer(parsedMessages, this.story, this.globalSettings, { elapsedMinutes: this.gameState?.getElapsedMinutes() || 0 });
+      const messagesHTML = msgRenderer.renderConversation('message');
+      html += `<div class="im-messages-container">${messagesHTML}</div>`;
+    } else {
+      // Fallback to legacy IM rendering
+      html += '<div class="im-messages-container">';
 
-    // Fallback to legacy IM rendering
-    let html = '<div class="im-thread">';
+      // Sort by display order
+      const sorted = [...messages].sort((a, b) => a.displayOrder - b.displayOrder);
 
-    // Sort by display order
-    const sorted = [...messages].sort((a, b) => a.displayOrder - b.displayOrder);
+      let lastParticipantId = null;
+      sorted.forEach((msg, index) => {
+        const msgParticipant = this.story.imParticipants.find(p => p.id === msg.participantId);
+        const msgDisplayName = msgParticipant ? (msgParticipant.displayName || msgParticipant.name) : msg.participantId;
+        const isNewSender = msg.participantId !== lastParticipantId;
 
-    sorted.forEach(msg => {
-      const participant = this.story.imParticipants.find(p => p.id === msg.participantId);
-      const displayName = participant ? (participant.displayName || participant.name) : msg.participantId;
+        // Start new message group if sender changed
+        if (isNewSender && lastParticipantId !== null) {
+          html += '</div>';
+        }
+        if (isNewSender) {
+          html += '<div class="im-message-group">';
+          lastParticipantId = msg.participantId;
+        }
 
-      html += `
-        <div class="im-message" data-message-id="${msg.id}">
-          <div class="msg-header">
-            ${this.getAvatarHTML(participant)}
-            <div class="msg-sender-info">
-              <div class="msg-sender">${displayName}</div>
-              <div class="msg-time">${msg.timestamp || ''}</div>
-            </div>
+        html += `
+          <div class="im-message msg-info" data-message-id="${msg.id}">
+            ${isNewSender ? this.getAvatarHTML(msgParticipant) : ''}
+            <div class="msg-bubble">${this.escapeHTML(msg.body)}</div>
+            <div class="msg-time-bubble">${msg.timestamp || ''}</div>
           </div>
-          <div class="msg-body">${msg.body}</div>
-      `;
+        `;
 
-      // Render attachments if present
-      if (msg.hasAttachment && msg.attachments && msg.attachments.length > 0) {
-        html += '<div class="im-attachments">';
-        msg.attachments.forEach(attachment => {
-          if (attachment.mimeType.startsWith('image/')) {
-            html += `<img src="${attachment.assetId}" alt="Attachment" class="im-attachment-image" style="max-width: 100%; max-height: 300px; margin: 10px 0;">`;
-          } else if (attachment.mimeType.startsWith('audio/')) {
-            html += `<audio controls style="display: block; margin: 10px 0;">
-              <source src="${attachment.assetId}" type="${attachment.mimeType}">
-              Your browser does not support the audio element.
-            </audio>`;
-          }
-        });
-        html += '</div>';
-      }
+        // Render attachments if present
+        if (msg.hasAttachment && msg.attachments && msg.attachments.length > 0) {
+          html += '<div class="im-attachments">';
+          msg.attachments.forEach(attachment => {
+            if (attachment.mimeType.startsWith('image/')) {
+              html += `<img src="${attachment.assetId}" alt="Attachment" class="im-attachment-image" style="max-width: 100%; max-height: 300px; margin: 10px 0;">`;
+            } else if (attachment.mimeType.startsWith('audio/')) {
+              html += `<audio controls style="display: block; margin: 10px 0;">
+                <source src="${attachment.assetId}" type="${attachment.mimeType}">
+                Your browser does not support the audio element.
+              </audio>`;
+            }
+          });
+          html += '</div>';
+        }
+
+        // Close group on last message
+        if (index === sorted.length - 1) {
+          html += '</div>';
+        }
+      });
 
       html += '</div>';
-    });
+    }
+
+    // Render input area
+    html += `
+      <div class="im-input-container">
+        <button class="im-input-btn" title="Emoji">😊</button>
+        <input type="text" class="im-input-field" placeholder="Type a message..." disabled>
+        <button class="im-input-btn" title="Attach">📎</button>
+        <button class="im-input-btn" title="Send">➤</button>
+      </div>
+    `;
 
     html += '</div>';
     return html;
