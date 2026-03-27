@@ -802,6 +802,110 @@ const app = {
     }
   },
 
+  // Create a new blank story
+  createNewStory() {
+    // Check if current story has unsaved changes
+    const currentStory = State.loadStory();
+    const hasChanges = JSON.stringify(currentStory) !== JSON.stringify(this.story);
+
+    if (hasChanges) {
+      const confirmed = confirm('You have unsaved changes. Creating a new story will start fresh. Continue?');
+      if (!confirmed) return;
+    }
+
+    // Create a fresh story with default values
+    this.story = State.getDefaultStory();
+    this.selectedArtefactId = null;
+    this.assetFiles.clear();
+
+    // Save to localStorage and render
+    this.saveStory();
+    this.render();
+
+    this.showToast('📄 New story created');
+  },
+
+  // Handle loading story from file
+  async handleLoadStoryFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    try {
+      UI.showSpinner('Loading story...');
+
+      if (file.name.endsWith('.story')) {
+        // Handle bundle format
+        const bundleBlob = await file.arrayBuffer();
+        const parsedBundle = await StoryBundle.parseBundle(bundleBlob);
+
+        if (!parsedBundle || !parsedBundle.story) {
+          throw new Error('Invalid story bundle format');
+        }
+
+        this.loadStory(parsedBundle.story, parsedBundle.assets || []);
+      } else if (file.name.endsWith('.json')) {
+        // Handle JSON format
+        const text = await file.text();
+        const story = JSON.parse(text);
+        this.loadStory(story, []);
+      } else {
+        throw new Error('Unsupported file format. Please use .json or .story files');
+      }
+
+      UI.hideSpinner();
+      this.showToast(`✓ Story loaded: ${file.name}`);
+      this.goToSection('dashboard');
+    } catch (error) {
+      console.error('Failed to load story:', error);
+      UI.hideSpinner();
+      UI.alert(`Failed to load story: ${error.message}`);
+    }
+
+    // Clear file input so same file can be loaded again
+    event.target.value = '';
+  },
+
+  // Load a story object (from file or other source)
+  loadStory(storyData, assets = []) {
+    try {
+      // Validate the loaded story has required structure
+      if (!storyData || typeof storyData !== 'object') {
+        throw new Error('Invalid story data format');
+      }
+
+      if (!storyData.id) {
+        storyData.id = `story_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      }
+
+      // Merge with default to fill any missing fields
+      const mergedStory = {
+        ...State.getDefaultStory(),
+        ...storyData
+      };
+
+      // Restore assets if provided (from bundle)
+      if (assets && Array.isArray(assets)) {
+        assets.forEach(asset => {
+          if (asset.file) {
+            const assetPath = asset.assetId.includes('/')
+              ? asset.assetId
+              : `assets/${asset.type || 'files'}/${asset.assetId}`;
+            this.assetFiles.set(assetPath, asset.file);
+          }
+        });
+      }
+
+      this.story = mergedStory;
+      this.selectedArtefactId = null;
+
+      // Save to localStorage
+      this.saveStory();
+      this.render();
+    } catch (error) {
+      throw new Error(`Failed to load story: ${error.message}`);
+    }
+  },
+
   // Preview
   openPreview() {
     const playerUrl = '../player/index.html?story=' + encodeURIComponent(JSON.stringify(this.story));
