@@ -96,6 +96,24 @@ const UI = {
       }
     });
 
+    // Global settings field bindings (nested properties)
+    const globalSettingsBindings = [
+      { elementId: 'settings-story-start-datetime', path: 'globalSettings.storyStartDateTime' },
+      { elementId: 'settings-timezone', path: 'globalSettings.timeZone' },
+      { elementId: 'settings-player-name', path: 'globalSettings.playerProfile.name' },
+      { elementId: 'settings-player-email', path: 'globalSettings.playerProfile.email' }
+    ];
+
+    globalSettingsBindings.forEach(({ elementId, path }) => {
+      const element = document.getElementById(elementId);
+      if (element) {
+        element.addEventListener('change', () => {
+          const value = element.value;
+          app.updateGlobalSetting(path, value);
+        });
+      }
+    });
+
     // Wallpaper file input setup (handled separately due to file upload logic)
     const wallpaperInput = document.getElementById('settings-wallpaper');
     if (wallpaperInput) {
