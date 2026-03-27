@@ -34,13 +34,21 @@ class ConversationMarkdownEditor {
     leftColumn.className = 'editor-left-column';
     leftColumn.innerHTML = `
       <div class="editor-header">
-        <h3>${this.type === 'email' ? 'Email Conversation' : 'IM Conversation'}</h3>
-        <p class="editor-hint">
-          ${this.type === 'email'
-            ? 'Format: [SENDER (email) => DATE/TIME | STATUS] Message or [<= TIME | STATUS] Reply'
-            : 'Format: [SENDER => DATE/TIME | STATUS] Message or [<= TIME | STATUS] Reply'
-          }
-        </p>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <div>
+            <h3>${this.type === 'email' ? 'Email Conversation' : 'IM Conversation'}</h3>
+            <p class="editor-hint">
+              ${this.type === 'email'
+                ? 'Format: [SENDER (email) => DATE/TIME | STATUS] Message or [<= TIME | STATUS] Reply'
+                : 'Format: [SENDER => DATE/TIME | STATUS] Message or [<= TIME | STATUS] Reply'
+              }
+            </p>
+          </div>
+          <button class="btn-help-toggle" title="Show formatting guide">?</button>
+        </div>
+      </div>
+      <div class="editor-help-panel" style="display: none;">
+        ${this._getHelpPanelHtml()}
       </div>
       <textarea class="editor-textarea"
                  placeholder="${this._getPlaceholder()}"
@@ -78,6 +86,7 @@ class ConversationMarkdownEditor {
     this.editorTextarea.addEventListener('input', () => this._updatePreview());
     leftColumn.querySelector('.btn-save').addEventListener('click', () => this._handleSave());
     leftColumn.querySelector('.btn-cancel').addEventListener('click', () => this.onCancel());
+    leftColumn.querySelector('.btn-help-toggle').addEventListener('click', () => this._toggleHelpPanel(leftColumn));
 
     // Initial preview
     this._updatePreview();
@@ -217,6 +226,104 @@ Found the issue! It's in the auth module.`;
 [<= 12:28 | read] Yeah, I'll be there for ten.
 
 [JAMES => 12:32 | unread] Awesome! See you then.`;
+    }
+  }
+
+  /**
+   * Get help panel HTML based on conversation type
+   * @private
+   */
+  _getHelpPanelHtml() {
+    if (this.type === 'email') {
+      return `
+        <div class="help-content">
+          <h4>Email Format Guide</h4>
+          <div class="help-section">
+            <h5>Sender Message:</h5>
+            <code>[SENDER (email@address.com) => DATE TIME | STATUS]</code>
+            <p class="help-example">Example: <code>[ALICE (alice@company.com) => 12/03/2026 10:15 | unread]</code></p>
+          </div>
+          <div class="help-section">
+            <h5>Your Reply:</h5>
+            <code>[<= TIME | STATUS]</code>
+            <p class="help-example">Example: <code>[<= 10:32 | read]</code></p>
+          </div>
+          <div class="help-section">
+            <h5>Subject Line (Optional):</h5>
+            <code>Subject: Your subject text</code>
+            <p class="help-example">Example: <code>Subject: RE: Project Discussion</code></p>
+          </div>
+          <div class="help-section">
+            <h5>Status Values:</h5>
+            <code>sent | delivered | read | unread</code>
+          </div>
+          <div class="help-section">
+            <h5>Complete Email Example:</h5>
+            <pre class="help-code">[ALICE (alice@company.com) => 12/03/2026 10:15 | unread]
+Subject: Project Update
+I have the latest numbers. Let me know if you need anything.
+
+[<= 10:32 | read]
+Subject: RE: Project Update
+Thanks for sending that over! Very helpful.
+
+[ALICE => 12/03/2026 14:45 | unread]
+Subject: RE: Project Update
+Great! Let's discuss tomorrow at 2 PM.</pre>
+          </div>
+        </div>
+      `;
+    } else {
+      return `
+        <div class="help-content">
+          <h4>IM Format Guide</h4>
+          <div class="help-section">
+            <h5>Sender Message:</h5>
+            <code>[SENDER => DATE TIME | STATUS] Message</code>
+            <p class="help-example">Example: <code>[JAMES => 12/03/2026 12:22 | unread] Hey, are you there?</code></p>
+          </div>
+          <div class="help-section">
+            <h5>Your Reply:</h5>
+            <code>[<= TIME | STATUS] Message</code>
+            <p class="help-example">Example: <code>[<= 12:28 | read] Yeah, just got here!</code></p>
+          </div>
+          <div class="help-section">
+            <h5>Status Values:</h5>
+            <code>sent | delivered | read | unread</code>
+          </div>
+          <div class="help-section">
+            <h5>Complete IM Example:</h5>
+            <pre class="help-code">[JAMES => 12/03/2026 12:22 | unread] Hey dude, are you coming to the party?
+
+[<= 12:28 | read] Yeah, I'll be there for ten.
+
+[JAMES => 12:32 | unread] Awesome! See you then.
+
+[<= 12:35 | read] Definitely! Bring the snacks?
+
+[JAMES => 12:40 | read] Already on it!</pre>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  /**
+   * Toggle visibility of the help panel
+   * @private
+   */
+  _toggleHelpPanel(leftColumn) {
+    const helpPanel = leftColumn.querySelector('.editor-help-panel');
+    const helpToggle = leftColumn.querySelector('.btn-help-toggle');
+
+    if (helpPanel.style.display === 'none') {
+      helpPanel.style.display = 'block';
+      helpToggle.textContent = '✕';
+      helpToggle.classList.add('active');
+    } else {
+      helpPanel.style.display = 'none';
+      helpToggle.textContent = '?';
+      helpToggle.classList.remove('active');
     }
   }
 
@@ -462,6 +569,98 @@ Found the issue! It's in the auth module.`;
         line-height: 1.5;
         white-space: pre-wrap;
         word-wrap: break-word;
+      }
+
+      .btn-help-toggle {
+        padding: 6px 10px;
+        background: #444;
+        color: #e0e0e0;
+        border: 1px solid #666;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 14px;
+        transition: background 0.2s;
+      }
+
+      .btn-help-toggle:hover {
+        background: #555;
+      }
+
+      .btn-help-toggle.active {
+        background: #0e7c0e;
+        border-color: #0e7c0e;
+      }
+
+      .editor-help-panel {
+        padding: 15px;
+        background: #2d2d2d;
+        border-bottom: 1px solid #333;
+        max-height: 300px;
+        overflow-y: auto;
+        font-size: 12px;
+      }
+
+      .help-content {
+        color: #d0d0d0;
+      }
+
+      .help-content h4 {
+        margin: 0 0 12px 0;
+        color: #fff;
+        font-size: 13px;
+      }
+
+      .help-section {
+        margin-bottom: 12px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #444;
+      }
+
+      .help-section:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+      }
+
+      .help-section h5 {
+        margin: 0 0 6px 0;
+        color: #0e9c0e;
+        font-size: 12px;
+      }
+
+      .help-section code {
+        background: #1e1e1e;
+        color: #7cfc00;
+        padding: 4px 8px;
+        border-radius: 3px;
+        font-family: 'Courier New', monospace;
+        display: inline-block;
+        margin: 4px 0;
+      }
+
+      .help-example {
+        margin: 6px 0 0 0;
+        color: #999;
+        font-style: italic;
+      }
+
+      .help-example code {
+        color: #aaa;
+      }
+
+      .help-code {
+        background: #1e1e1e;
+        color: #7cfc00;
+        padding: 8px 12px;
+        border-radius: 3px;
+        border-left: 3px solid #0e7c0e;
+        font-family: 'Courier New', monospace;
+        font-size: 11px;
+        margin: 6px 0 0 0;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        overflow-x: auto;
       }
 
       @media (max-width: 1200px) {
