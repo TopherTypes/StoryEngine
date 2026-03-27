@@ -16,6 +16,9 @@ const app = {
     this.story = State.loadStory();
     console.log('Loaded story:', this.story.title);
 
+    // Initialize global settings (migration for old format)
+    Migration.initializeGlobalSettings(this.story);
+
     // Initialize UI
     UI.init();
 
